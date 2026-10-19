@@ -305,39 +305,42 @@
         }
 
         document.getElementById('add-site-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const urlInput = document.getElementById('site-url');
-            let url = urlInput.value.trim();
+    e.preventDefault();
+    
+    const urlInput = document.getElementById('site-url');
+    let url = urlInput.value.trim();
 
-            if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                url = 'https://' + url;
+    // 1. Ako ne počinje sa http/https, dodaj https://
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+    }
+
+    // 2. Provera domena (mora imati tačku i validan TLD od bar 2 slova, npr. .com, .io, .org)
+    const domainRegex = /^https?:\/\/([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/;
+    
+    if (!domainRegex.test(url)) {
+        alert("Invalid domain! Please enter a valid website (e.g., example.com or https://example.com)");
+        return; // PREKIDA SE ako je uneto nešto fejk
+    }
+
+    // 3. Upis u Supabase tek ako je provera prošla
+    const { data: { user } } = await _supabase.auth.getUser();
+
+    if (user) {
+        const { error } = await _supabase.from('sites').insert([{ url, user_id: user.id }]);
+        if (error) {
+            if (error.code === '23505') {
+                alert("You are already monitoring this website!");
+            } else {
+                alert(error.message);
             }
-
-            // Stroga provera domena da blokira lažne unose tipa https://sdgfgdgvdvhdbv
-            const domainRegex = /^(https?:\/\/)?([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(:\d+)?(\/.*)?$/;
+        } else {
+            urlInput.value = '';
+            loadSites(user.id);
+        }
+    }
+});
             
-            if (!domainRegex.test(url)) {
-                alert("Please enter a valid website domain (e.g., example.com or https://example.com)");
-                return;
-            }
-
-            const { data: { user } } = await _supabase.auth.getUser();
-
-            if (user) {
-                const { error } = await _supabase.from('sites').insert([{ url, user_id: user.id }]);
-                if (error) {
-                    if (error.code === '23505') {
-                        alert("You are already monitoring this website!");
-                    } else {
-                        alert(error.message);
-                    }
-                } else {
-                    urlInput.value = '';
-                    loadSites(user.id);
-                }
-            }
-        });
-
     </script>
 </body>
 </html>
