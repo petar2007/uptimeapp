@@ -303,40 +303,82 @@
         }
 
         // Form Submission with Strict Regex Validation
-        document.getElementById('add-site-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const urlInput = document.getElementById('site-url');
-            let url = urlInput.value.trim();
+        document.getElementById('add-site-form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    e.stopPropagation();
 
-            if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                url = 'https://' + url;
-            }
+    const urlInput = document.getElementById('site-url');
+    let url = urlInput.value.trim();
+    const submitBtn = document.getElementById('add-site-btn');
 
-            // Strict domain check regex
-            const domainRegex = /^https?:\/\/([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/;
-            
-            if (!domainRegex.test(url)) {
-                alert("Invalid domain! Please enter a valid website (e.g., example.com or https://example.com)");
-                return;
-            }
+    if (!url) {
+        alert("Please enter a URL.");
+        return false;
+    }
 
-            const { data: { user } } = await _supabase.auth.getUser();
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+    }
 
-            if (user) {
-                const { error } = await _supabase.from('sites').insert([{ url, user_id: user.id }]);
-                if (error) {
-                    if (error.code === '23505') {
-                        alert("You are already monitoring this website!");
-                    } else {
-                        alert(error.message);
-                    }
+    // 1. Sintaksna provera (Regex)
+    const domainRegex = /^https?:\/\/([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/;
+    if (!domainRegex.test(url)) {
+        alert("Invalid domain format! Example: example.com or https://example.com");
+        return false;
+    }
+
+    // Promeni dugme u "Checking..." da korisnik vidi da se nešto dešava
+    submitBtn.disabled = true;
+    submitBtn.innerText = "Checking site...";
+
+    try {
+        // 2. Provera da li sajt stvarno postoji/radi preko javnog testa (CORS-friendly ping)
+        // Koristimo fetch sa 'no-cors' ili proveravamo preko besplatnog status API-ja
+        const domainOnly = new URL(url).hostname;
+        
+        // Brzi test preko head zahteve / api-ja ili jednostavan image/fetch test
+        const checkResponse = await fetch(`https://dns.google/resolve?name=${domainOnly}`, { method: 'GET' });
+        const dnsData = await checkResponse.json();
+
+        if (!dnsData.Answer || dnsData.Answer.length === 0) {
+            alert("This website domain does not exist or has no active DNS records!");
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Add Site";
+            return false;
+        }
+
+    } catch (err) {
+        console.error("DNS/Domain check failed:", err);
+        alert("Could not verify this website. Please check the URL and try again.");
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Add Site";
+        return false;
+    }
+
+    // 3. Ako je sve prošlo, upisujemo u Supabase
+    try {
+        const { data: { user } } = await _supabase.auth.getUser();
+
+        if (user) {
+            const { error } = await _supabase.from('sites').insert([{ url, user_id: user.id }]);
+            if (error) {
+                if (error.code === '23505') {
+                    alert("You are already monitoring this website!");
                 } else {
-                    urlInput.value = '';
-                    loadSites(user.id);
+                    alert(error.message);
                 }
+            } else {
+                urlInput.value = '';
+                loadSites(user.id);
             }
-        });
+        }
+    } catch (err) {
+        console.error("Error adding site to database:", err);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Add Site";
+    }
+});
     </script>
 </body>
 </html>
