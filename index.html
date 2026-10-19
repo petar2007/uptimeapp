@@ -154,7 +154,7 @@
         &copy; 2026 UptimeMonitor. All rights reserved.
     </footer>
 
-    <!-- Supabase Auth Script -->
+    <!-- Supabase Auth & Uptime Script -->
     <script>
         const SUPABASE_URL = 'https://pomwrqrmvjxcnqeaaylk.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvbXdycXJtdmp4Y25xZWFheWxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMzM4MTgsImV4cCI6MjEwNzkwOTgxOH0.YLlPyAagO59cxPDQ69iP-7w9iPj6MX-3MM2sEgobV-A';
@@ -197,6 +197,7 @@
                 }
 
                 loadSites(session.user.id);
+                runUptimeChecks(session.user.id);
             } else {
                 document.getElementById('landing-view').classList.remove('hidden');
                 document.getElementById('dashboard-view').classList.add('hidden');
@@ -303,88 +304,144 @@
         }
 
         // Form Submission with Strict Regex Validation
-    document.getElementById('add-site-form').addEventListener('submit', async function (e) {
-    e.preventDefault();
-    e.stopPropagation();
+        document.getElementById('add-site-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            e.stopPropagation();
 
-    const urlInput = document.getElementById('site-url');
-    let url = urlInput.value.trim();
-    const submitBtn = document.getElementById('add-site-btn');
+            const urlInput = document.getElementById('site-url');
+            let url = urlInput.value.trim();
+            const submitBtn = document.getElementById('add-site-btn');
 
-    if (!url) {
-        alert("Please enter a URL.");
-        return false;
-    }
+            if (!url) {
+                alert("Please enter a URL.");
+                return false;
+            }
 
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        url = 'https://' + url;
-    }
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
 
-    // 1. Sintaksna provera (Regex)
-    const domainRegex = /^https?:\/\/([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/;
-    if (!domainRegex.test(url)) {
-        alert("Invalid domain format! Example: example.com or https://example.com");
-        return false;
-    }
+            // 1. Sintaksna provera (Regex)
+            const domainRegex = /^https?:\/\/([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/;
+            if (!domainRegex.test(url)) {
+                alert("Invalid domain format! Example: example.com or https://example.com");
+                return false;
+            }
 
-    submitBtn.disabled = true;
-    submitBtn.innerText = "Checking site...";
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Checking site...";
 
-    try {
-        // 2. Provera da li domen postoji preko DNS-a
-        const domainOnly = new URL(url).hostname;
-        const checkResponse = await fetch(`https://dns.google/resolve?name=${domainOnly}`, { method: 'GET' });
-        const dnsData = await checkResponse.json();
+            try {
+                // 2. Provera da li domen postoji preko DNS-a
+                const domainOnly = new URL(url).hostname;
+                const checkResponse = await fetch(`https://dns.google/resolve?name=${domainOnly}`, { method: 'GET' });
+                const dnsData = await checkResponse.json();
 
-        if (!dnsData.Answer || dnsData.Answer.length === 0) {
-            alert("This website domain does not exist or has no active DNS records!");
-            submitBtn.disabled = false;
-            submitBtn.innerText = "Add Site";
-            return false;
-        }
+                if (!dnsData.Answer || dnsData.Answer.length === 0) {
+                    alert("This website domain does not exist or has no active DNS records!");
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = "Add Site";
+                    return false;
+                }
 
-        // 3. Provera limita sajtova prema planu (Free plan limit = 1)
-        const { data: { user } } = await _supabase.auth.getUser();
+                // 3. Provera limita sajtova prema planu (Free plan limit = 1)
+                const { data: { user } } = await _supabase.auth.getUser();
 
-        if (user) {
-            // Izbroj koliko sajtova korisnik već ima
-            const { count, error: countError } = await _supabase
-                .from('sites')
-                .select('*', { count: 'exact', head: true })
-                .eq('user_id', user.id);
+                if (user) {
+                    // Izbroj koliko sajtova korisnik već ima
+                    const { count, error: countError } = await _supabase
+                        .from('sites')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('user_id', user.id);
 
-            if (!countError && count >= 1) { // Trenutno podrazumevamo Free plan (limit 1)
-                alert("You have reached the limit of your Free Plan (1 website). Upgrade to Pro to monitor more websites!");
+                    if (!countError && count >= 1) { // Free plan limit 1
+                        alert("You have reached the limit of your Free Plan (1 website). Upgrade to Pro to monitor more websites!");
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = "Add Site";
+                        return;
+                    }
+
+                    // 4. Upis u Supabase ako su svi uslovi zadovoljeni
+                    const { error } = await _supabase.from('sites').insert([{ url, user_id: user.id }]);
+                    if (error) {
+                        if (error.code === '23505') {
+                            alert("You are already monitoring this website!");
+                        } else {
+                            alert(error.message);
+                        }
+                    } else {
+                        urlInput.value = '';
+                        loadSites(user.id);
+                        runUptimeChecks(user.id);
+                    }
+                }
+            } catch (err) {
+                console.error("Error during site addition:", err);
+                alert("Could not verify or add website. Please try again.");
+            } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerText = "Add Site";
+            }
+        });
+
+        // Function for automated background uptime checks
+        async function runUptimeChecks(userId) {
+            console.log("Starting uptime checks...");
+            
+            // 1. Fetch sites belonging to the logged-in user
+            const { data: sites, error } = await _supabase
+                .from('sites')
+                .select('*')
+                .eq('user_id', userId);
+
+            if (error || !sites || sites.length === 0) {
+                console.log("No sites available to check.");
                 return;
             }
 
-            // 4. Upis u Supabase ako su svi uslovi zadovoljeni
-            const { error } = await _supabase.from('sites').insert([{ url, user_id: user.id }]);
-            if (error) {
-                if (error.code === '23505') {
-                    alert("You are already monitoring this website!");
-                } else {
-                    alert(error.message);
-                }
-            } else {
-                urlInput.value = '';
-                loadSites(user.id);
-            }
-        }
-    } catch (err) {
-        console.error("Error during site addition:", err);
-        alert("Could not verify or add website. Please try again.");
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerText = "Add Site";
-    }
-});
+            // 2. Iterate through each site and test connectivity
+            for (const site of sites) {
+                const startTime = performance.now();
+                let status = 'DOWN';
+                let responseTime = 0;
 
-    
-        
-   
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+                    await fetch(site.url, { 
+                        method: 'GET', 
+                        mode: 'no-cors', 
+                        signal: controller.signal 
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    const endTime = performance.now();
+                    responseTime = Math.round(endTime - startTime);
+                    status = 'UP';
+                } catch (err) {
+                    console.warn(`Site unreachable (${site.url}):`, err);
+                    status = 'DOWN';
+                    responseTime = 10000;
+                }
+
+                // 3. Log results into the 'checks' database table
+                const { error: insertError } = await _supabase
+                    .from('checks')
+                    .insert([{ 
+                        site_id: site.id, 
+                        status: status, 
+                        response_time: responseTime 
+                    }]);
+
+                if (insertError) {
+                    console.error("Error saving check log:", insertError.message);
+                } else {
+                    console.log(`Checked ${site.url}: Status -> ${status} (${responseTime}ms)`);
+                }
+            }
+            console.log("Uptime checks completed successfully.");
+        }
     </script>
 </body>
 </html>
