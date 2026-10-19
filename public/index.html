@@ -309,13 +309,11 @@
             const urlInput = document.getElementById('site-url');
             let url = urlInput.value.trim();
 
-            // Automatski dodaj https:// ako korisnik kuca npr. google.com bez protokola
             if (!url.startsWith('http://') && !url.startsWith('https://')) {
                 url = 'https://' + url;
             }
 
-            // Stroga provera da li je unet validan domen (npr. nesto.com, test.co.uk)
-            // Sprečava unose tipa https://sdgfgdgvdvhdbv bez prave ekstenzije
+            // Stroga provera domena da blokira lažne unose tipa https://sdgfgdgvdvhdbv
             const domainRegex = /^(https?:\/\/)?([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(:\d+)?(\/.*)?$/;
             
             if (!domainRegex.test(url)) {
@@ -339,6 +337,7 @@
                 }
             }
         });
+
     </script>
 </body>
 </html>
