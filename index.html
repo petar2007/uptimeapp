@@ -263,37 +263,41 @@
         }
 
         async function loadSites(userId) {
-            const sitesList = document.getElementById('sites-list');
-            const { data: sites, error } = await _supabase.from('sites').select('*').eq('user_id', userId);
-            
-            if (error || !sites || sites.length === 0) {
-                sitesList.innerHTML = '<p class="text-slate-500 text-sm py-4 text-center">No sites added yet. Add your first URL above!</p>';
-                return;
-            }
+    const sitesList = document.getElementById('sites-list');
+    const { data: sites, error } = await _supabase.from('sites').select('*').eq('user_id', userId);
+    
+    if (error || !sites || sites.length === 0) {
+        sitesList.innerHTML = '<p class="text-slate-500 text-sm py-4 text-center">No sites added yet. Add your first URL above!</p>';
+        return;
+    }
 
-            sitesList.innerHTML = sites.map(s => `
-                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <div class="overflow-hidden">
-                        <p class="font-medium text-white truncate max-w-[240px] sm:max-w-md">${s.url}</p>
-                        <p class="text-xs text-slate-400">Status: Active</p>
-                    </div>
-                    <div class="flex items-center justify-between w-full sm:w-auto gap-3 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-800">
-                        <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full border border-emerald-500/20">Active</span>
-                        <button data-id="${s.id}" data-user="${userId}" class="delete-btn text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 font-medium px-3 py-1 rounded-lg transition">
-                            Delete
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+    sitesList.innerHTML = sites.map(s => `
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div class="overflow-hidden">
+                <p class="font-medium text-white truncate max-w-[240px] sm:max-w-md">${s.url}</p>
+                <p class="text-xs text-slate-400">Status: Active</p>
+            </div>
+            <div class="flex items-center justify-between w-full sm:w-auto gap-3 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-800">
+                <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full border border-emerald-500/20">Active</span>
+                <button data-id="${s.id}" data-user="${userId}" class="delete-btn text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 font-medium px-3 py-1 rounded-lg transition">
+                    Delete
+                </button>
+            </div>
+        </div>
+    `).join('');
 
-            document.querySelectorAll('.delete-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const siteId = parseInt(e.currentTarget.getAttribute('data-id'), 10);
-                    const uId = e.currentTarget.getAttribute('data-user');
-                    deleteSite(siteId, uId);
-                });
-            });
-        }
+    document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const siteId = parseInt(e.currentTarget.getAttribute('data-id'), 10);
+            const uId = e.currentTarget.getAttribute('data-user');
+            deleteSite(siteId, uId);
+        });
+    });
+
+    // DODAJ OVAJ RED OVDE:
+    runUptimeChecks(userId);
+}
+             
 
         async function deleteSite(siteId, userId) {
             if (confirm("Are you sure you want to delete this website from monitoring?")) {
