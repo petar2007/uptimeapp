@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uptime Monitor - Simple & Reliable Website Monitoring</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between">
+
+    <div>
+        <!-- Header / Navbar -->
+        <header class="border-b border-slate-800 py-4 px-4 sm:px-6 flex flex-wrap justify-between items-center gap-4 max-w-6xl mx-auto">
+            <div class="text-xl font-bold tracking-tight text-blue-400">⚡ UptimeMonitor</div>
+            <div id="nav-actions" class="flex items-center gap-4">
+                <a href="#pricing" class="text-sm text-slate-300 hover:text-white hidden sm:inline">Pricing</a>
+                <button onclick="showAuthModal()" id="auth-nav-btn" class="bg-blue-600 hover:bg-blue-500 text-white text-sm px-4 py-2 rounded-lg font-medium transition">Get Started / Login</button>
+            </div>
+        </header>
+
+        <!-- Landing Page View -->
+        <div id="landing-view">
+            <!-- Hero Section -->
+            <section class="max-w-4xl mx-auto text-center py-16 px-6">
+                <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight mb-6 leading-tight">
+                    Instant Downtime Alerts <br/><span class="text-blue-500">Without the Complexity</span>
+                </h1>
+                <p class="text-base sm:text-lg text-slate-400 mb-8 max-w-2xl mx-auto">
+                    Monitor your websites globally. Get notified immediately via email the moment your service goes down.
+                </p>
+                <button onclick="showAuthModal()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3 rounded-xl transition shadow-lg shadow-blue-600/20">Start Monitoring Now</button>
+            </section>
+
+            <!-- Pricing Section -->
+            <section id="pricing" class="max-w-5xl mx-auto py-12 px-6 border-t border-slate-800">
+                <h2 class="text-2xl sm:text-3xl font-bold text-center mb-10">Simple, Transparent Pricing</h2>
+                <div class="grid md:grid-cols-3 gap-6">
+                    <!-- Free Plan -->
+                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold mb-2">Free Plan</h3>
+                            <p class="text-3xl font-extrabold mb-6">$0 <span class="text-sm font-normal text-slate-400">/ forever</span></p>
+                            <ul class="text-sm text-slate-300 space-y-3 mb-6">
+                                <li>✅ 1 Website monitored</li>
+                                <li>✅ 5-minute check interval</li>
+                                <li>✅ Email alerts</li>
+                            </ul>
+                        </div>
+                        <button onclick="showAuthModal()" class="w-full bg-slate-800 hover:bg-slate-700 py-2.5 rounded-lg text-sm font-medium transition">Choose Free</button>
+                    </div>
+
+                    <!-- Pro Plan -->
+                    <div class="bg-slate-900 border border-blue-500/50 p-6 rounded-2xl flex flex-col justify-between relative shadow-xl shadow-blue-900/20">
+                        <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-600 text-xs uppercase px-3 py-1 rounded-full font-bold tracking-wider">Popular</div>
+                        <div>
+                            <h3 class="text-xl font-bold mb-2">Pro Plan</h3>
+                            <p class="text-3xl font-extrabold mb-6">€4 <span class="text-sm font-normal text-slate-400">/ month</span></p>
+                            <ul class="text-sm text-slate-300 space-y-3 mb-6">
+                                <li>✅ Up to 5 websites</li>
+                                <li>✅ 2-minute check interval</li>
+                                <li>✅ Priority email alerts</li>
+                            </ul>
+                        </div>
+                        <button onclick="showAuthModal()" class="w-full bg-blue-600 hover:bg-blue-500 py-2.5 rounded-lg text-sm font-medium transition">Choose Pro</button>
+                    </div>
+
+                    <!-- Power Plan -->
+                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold mb-2">Power Plan</h3>
+                            <p class="text-3xl font-extrabold mb-6">€9 <span class="text-sm font-normal text-slate-400">/ month</span></p>
+                            <ul class="text-sm text-slate-300 space-y-3 mb-6">
+                                <li>✅ Up to 20 websites</li>
+                                <li>✅ 30-second check interval</li>
+                                <li>✅ Referral badge option</li>
+                            </ul>
+                        </div>
+                        <button onclick="showAuthModal()" class="w-full bg-slate-800 hover:bg-slate-700 py-2.5 rounded-lg text-sm font-medium transition">Choose Power</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Dashboard View -->
+        <div id="dashboard-view" class="hidden max-w-2xl mx-auto py-8 px-4">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-xl sm:text-2xl font-bold">Your Monitored Sites</h2>
+                    <p id="user-display-email" class="text-xs text-slate-400 mt-1"></p>
+                </div>
+                <button onclick="logout()" class="text-sm text-slate-400 hover:text-white bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg transition">Logout</button>
+            </div>
+
+            <!-- Add Site Form -->
+            <form id="add-site-form" class="flex flex-col sm:flex-row gap-3 mb-6">
+                <input type="url" id="site-url" placeholder="https://example.com" required class="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+                <button type="submit" id="add-site-btn" class="bg-blue-600 hover:bg-blue-500 px-5 py-2.5 rounded-lg text-sm font-medium transition">Add Site</button>
+            </form>
+
+            <!-- Sites List -->
+            <div id="sites-list" class="space-y-3">
+                <p class="text-slate-500 text-sm">Loading sites...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full relative shadow-2xl">
+            <button onclick="hideAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl font-bold">&times;</button>
+            <h3 class="text-xl font-bold mb-4">Account Access</h3>
+
+            <!-- Google Login Button -->
+            <button type="button" onclick="handleGoogleAuth()" class="w-full mb-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-medium py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 transition">
+                <svg class="w-4 h-4" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                Continue with Google
+            </button>
+
+            <div class="relative flex py-2 items-center mb-4">
+                <div class="flex-grow border-t border-slate-800"></div>
+                <span class="flex-shrink mx-3 text-xs text-slate-500 uppercase">or email</span>
+                <div class="flex-grow border-t border-slate-800"></div>
+            </div>
+
+            <!-- Red Error Alert Area -->
+            <div id="auth-error-msg" class="hidden mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-lg"></div>
+
+            <form id="auth-form" class="space-y-4" onsubmit="event.preventDefault();">
+                <div>
+                    <label class="text-xs text-slate-400">Email</label>
+                    <input type="email" id="auth-email" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 mt-1">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400">Password</label>
+                    <input type="password" id="auth-password" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 mt-1">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="button" id="login-btn" onclick="handleAuth('login')" class="flex-1 bg-blue-600 hover:bg-blue-500 py-2.5 rounded-lg text-sm font-medium transition disabled:opacity-50">Login</button>
+                    <button type="button" id="signup-btn" onclick="handleAuth('signup')" class="flex-1 bg-slate-800 hover:bg-slate-700 py-2.5 rounded-lg text-sm font-medium transition disabled:opacity-50">Sign Up</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/60 py-6 text-center text-xs text-slate-500">
+        &copy; 2026 UptimeMonitor. All rights reserved.
+    </footer>
+
+    <!-- Supabase Auth Script -->
+    <script>
+        const SUPABASE_URL = 'https://pomwrqrmvjxcnqeaaylk.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvbXdycXJtdmp4Y25xZWFheWxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMzM4MTgsImV4cCI6MjEwNzkwOTgxOH0.YLlPyAagO59cxPDQ69iP-7w9iPj6MX-3MM2sEgobV-A';
+
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function showAuthModal() {
+            clearAuthError();
+            document.getElementById('auth-modal').classList.remove('hidden');
+        }
+        function hideAuthModal() {
+            clearAuthError();
+            document.getElementById('auth-modal').classList.add('hidden');
+        }
+
+        function showAuthError(msg) {
+            const errDiv = document.getElementById('auth-error-msg');
+            errDiv.textContent = msg;
+            errDiv.classList.remove('hidden');
+        }
+
+        function clearAuthError() {
+            const errDiv = document.getElementById('auth-error-msg');
+            errDiv.textContent = '';
+            errDiv.classList.add('hidden');
+        }
+
+        // Auth state listener
+        _supabase.auth.onAuthStateChange((event, session) => {
+            if (session) {
+                hideAuthModal();
+                document.getElementById('landing-view').classList.add('hidden');
+                document.getElementById('dashboard-view').classList.remove('hidden');
+                document.getElementById('auth-nav-btn').classList.add('hidden');
+                
+                // Show logged in email
+                const emailElem = document.getElementById('user-display-email');
+                if (emailElem && session.user) {
+                    emailElem.textContent = `Logged in as: ${session.user.email}`;
+                }
+
+                loadSites(session.user.id);
+            } else {
+                document.getElementById('landing-view').classList.remove('hidden');
+                document.getElementById('dashboard-view').classList.add('hidden');
+                document.getElementById('auth-nav-btn').classList.remove('hidden');
+            }
+        });
+
+        // Google Authentication
+        async function handleGoogleAuth() {
+            const { error } = await _supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.origin
+                }
+            });
+            if (error) showAuthError(error.message);
+        }
+
+        // Email & Password Auth
+        async function handleAuth(type) {
+            clearAuthError();
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+
+            if (!email || !password) {
+                showAuthError("Please fill in both email and password.");
+                return;
+            }
+
+            // Disable buttons during request to prevent spam clicks
+            const loginBtn = document.getElementById('login-btn');
+            const signupBtn = document.getElementById('signup-btn');
+            loginBtn.disabled = true;
+            signupBtn.disabled = true;
+            loginBtn.innerText = "Processing...";
+
+            let result;
+            if (type === 'signup') {
+                result = await _supabase.auth.signUp({ email, password });
+                if (!result.error) {
+                    showAuthError("Success! Check your email for the confirmation link.");
+                }
+            } else {
+                result = await _supabase.auth.signInWithPassword({ email, password });
+            }
+
+            // Re-enable buttons
+            loginBtn.disabled = false;
+            signupBtn.disabled = false;
+            loginBtn.innerText = "Login";
+
+            if (result.error) {
+                if (result.error.message.includes("Invalid login credentials")) {
+                    showAuthError("Wrong email or password.");
+                } else if (result.error.message.includes("User already registered")) {
+                    showAuthError("An account with this email already exists.");
+                } else {
+                    showAuthError(result.error.message);
+                }
+            }
+        }
+
+        async function logout() {
+            await _supabase.auth.signOut();
+        }
+
+        async function loadSites(userId) {
+            const sitesList = document.getElementById('sites-list');
+            const { data: sites, error } = await _supabase.from('sites').select('*').eq('user_id', userId);
+            
+            if (error || !sites || sites.length === 0) {
+                sitesList.innerHTML = '<p class="text-slate-500 text-sm py-4 text-center">No sites added yet. Add your first URL above!</p>';
+                return;
+            }
+
+            sitesList.innerHTML = sites.map(s => `
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div class="overflow-hidden">
+                        <p class="font-medium text-white truncate max-w-[240px] sm:max-w-md">${s.url}</p>
+                        <p class="text-xs text-slate-400">Status: Active</p>
+                    </div>
+                    <div class="flex items-center justify-between w-full sm:w-auto gap-3 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-800">
+                        <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full border border-emerald-500/20">Active</span>
+                        <button data-id="${s.id}" data-user="${userId}" class="delete-btn text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 font-medium px-3 py-1 rounded-lg transition">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const siteId = parseInt(e.currentTarget.getAttribute('data-id'), 10);
+                    const uId = e.currentTarget.getAttribute('data-user');
+                    deleteSite(siteId, uId);
+                });
+            });
+        }
+
+        async function deleteSite(siteId, userId) {
+            if (confirm("Are you sure you want to delete this website from monitoring?")) {
+                const { error } = await _supabase.from('sites').delete().eq('id', siteId);
+                if (error) alert(error.message);
+                else loadSites(userId);
+            }
+        }
+
+        document.getElementById('add-site-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const urlInput = document.getElementById('site-url');
+            let url = urlInput.value.trim();
+
+            // Automatski dodaj https:// ako korisnik kuca npr. google.com bez protokola
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
+
+            // Stroga provera da li je unet validan domen (npr. nesto.com, test.co.uk)
+            // Sprečava unose tipa https://sdgfgdgvdvhdbv bez prave ekstenzije
+            const domainRegex = /^(https?:\/\/)?([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(:\d+)?(\/.*)?$/;
+            
+            if (!domainRegex.test(url)) {
+                alert("Please enter a valid website domain (e.g., example.com or https://example.com)");
+                return;
+            }
+
+            const { data: { user } } = await _supabase.auth.getUser();
+
+            if (user) {
+                const { error } = await _supabase.from('sites').insert([{ url, user_id: user.id }]);
+                if (error) {
+                    if (error.code === '23505') {
+                        alert("You are already monitoring this website!");
+                    } else {
+                        alert(error.message);
+                    }
+                } else {
+                    urlInput.value = '';
+                    loadSites(user.id);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
