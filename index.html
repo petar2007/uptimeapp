@@ -303,7 +303,7 @@
         }
 
         // Form Submission with Strict Regex Validation
-        document.getElementById('add-site-form').addEventListener('submit', async function (e) {
+    document.getElementById('add-site-form').addEventListener('submit', async function (e) {
     e.preventDefault();
     e.stopPropagation();
 
@@ -327,16 +327,12 @@
         return false;
     }
 
-    // Promeni dugme u "Checking..." da korisnik vidi da se nešto dešava
     submitBtn.disabled = true;
     submitBtn.innerText = "Checking site...";
 
     try {
-        // 2. Provera da li sajt stvarno postoji/radi preko javnog testa (CORS-friendly ping)
-        // Koristimo fetch sa 'no-cors' ili proveravamo preko besplatnog status API-ja
+        // 2. Provera da li domen postoji preko DNS-a
         const domainOnly = new URL(url).hostname;
-        
-        // Brzi test preko head zahteve / api-ja ili jednostavan image/fetch test
         const checkResponse = await fetch(`https://dns.google/resolve?name=${domainOnly}`, { method: 'GET' });
         const dnsData = await checkResponse.json();
 
@@ -347,19 +343,24 @@
             return false;
         }
 
-    } catch (err) {
-        console.error("DNS/Domain check failed:", err);
-        alert("Could not verify this website. Please check the URL and try again.");
-        submitBtn.disabled = false;
-        submitBtn.innerText = "Add Site";
-        return false;
-    }
-
-    // 3. Ako je sve prošlo, upisujemo u Supabase
-    try {
+        // 3. Provera limita sajtova prema planu (Free plan limit = 1)
         const { data: { user } } = await _supabase.auth.getUser();
 
         if (user) {
+            // Izbroj koliko sajtova korisnik već ima
+            const { count, error: countError } = await _supabase
+                .from('sites')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', user.id);
+
+            if (!countError && count >= 1) { // Trenutno podrazumevamo Free plan (limit 1)
+                alert("You have reached the limit of your Free Plan (1 website). Upgrade to Pro to monitor more websites!");
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Add Site";
+                return;
+            }
+
+            // 4. Upis u Supabase ako su svi uslovi zadovoljeni
             const { error } = await _supabase.from('sites').insert([{ url, user_id: user.id }]);
             if (error) {
                 if (error.code === '23505') {
@@ -373,12 +374,17 @@
             }
         }
     } catch (err) {
-        console.error("Error adding site to database:", err);
+        console.error("Error during site addition:", err);
+        alert("Could not verify or add website. Please try again.");
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerText = "Add Site";
     }
 });
+
+    
+        
+   
     </script>
 </body>
 </html>
