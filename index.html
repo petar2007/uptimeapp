@@ -183,7 +183,7 @@
         }
 
         // Auth state listener
-        _supabase.auth.onAuthStateChange((event, session) => {
+        _supabase.auth.onAuthStateChange(async (event, session) => {
             if (session) {
                 hideAuthModal();
                 document.getElementById('landing-view').classList.add('hidden');
@@ -196,9 +196,21 @@
                     emailElem.textContent = `Logged in as: ${session.user.email}`;
                 }
 
-                loadSites(session.user.id);
-                runUptimeChecks(session.user.id);
+                // Inicijalno učitavanje i prva provera
+                await loadSites(session.user.id);
+                await runUptimeChecks(session.user.id);
+
+                // Automatska provera na svakih 60 sekundi dok je korisnik na Dashboard-u
+                if (!window.checkInterval) {
+                    window.checkInterval = setInterval(() => {
+                        runUptimeChecks(session.user.id);
+                    }, 60000);
+                }
             } else {
+                if (window.checkInterval) {
+                    clearInterval(window.checkInterval);
+                    window.checkInterval = null;
+                }
                 document.getElementById('landing-view').classList.remove('hidden');
                 document.getElementById('dashboard-view').classList.add('hidden');
                 document.getElementById('auth-nav-btn').classList.remove('hidden');
@@ -262,51 +274,77 @@
             await _supabase.auth.signOut();
         }
 
+        // Učitavanje sajtova sa poslednjim zabeleženim statusom
         async function loadSites(userId) {
-    const sitesList = document.getElementById('sites-list');
-    const { data: sites, error } = await _supabase.from('sites').select('*').eq('user_id', userId);
-    
-    if (error || !sites || sites.length === 0) {
-        sitesList.innerHTML = '<p class="text-slate-500 text-sm py-4 text-center">No sites added yet. Add your first URL above!</p>';
-        return;
-    }
+            const sitesList = document.getElementById('sites-list');
+            const { data: sites, error } = await _supabase.from('sites').select('*').eq('user_id', userId);
+            
+            if (error || !sites || sites.length === 0) {
+                sitesList.innerHTML = '<p class="text-slate-500 text-sm py-4 text-center">No sites added yet. Add your first URL above!</p>';
+                return;
+            }
 
-    sitesList.innerHTML = sites.map(s => `
-        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div class="overflow-hidden">
-                <p class="font-medium text-white truncate max-w-[240px] sm:max-w-md">${s.url}</p>
-                <p class="text-xs text-slate-400">Status: Active</p>
-            </div>
-            <div class="flex items-center justify-between w-full sm:w-auto gap-3 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-800">
-                <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full border border-emerald-500/20">Active</span>
-                <button data-id="${s.id}" data-user="${userId}" class="delete-btn text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 font-medium px-3 py-1 rounded-lg transition">
-                    Delete
-                </button>
-            </div>
-        </div>
-    `).join('');
+            const siteIds = sites.map(s => s.id);
+            const { data: checks } = await _supabase
+                .from('checks')
+                .select('*')
+                .in('site_id', siteIds)
+                .order('checked_at', { ascending: false });
 
-    document.querySelectorAll('.delete-btn').forEach(button => {
-        button.addEventListener('click', (e) => {
-            const siteId = parseInt(e.currentTarget.getAttribute('data-id'), 10);
-            const uId = e.currentTarget.getAttribute('data-user');
-            deleteSite(siteId, uId);
-        });
-    });
+            const latestChecks = {};
+            if (checks) {
+                checks.forEach(check => {
+                    if (!latestChecks[check.site_id]) {
+                        latestChecks[check.site_id] = check;
+                    }
+                });
+            }
 
-    // DODAJ OVAJ RED OVDE:
-    runUptimeChecks(userId);
-}
+            sitesList.innerHTML = sites.map(s => {
+                const lastCheck = latestChecks[s.id];
+                const isUp = lastCheck ? lastCheck.status === 'UP' : true;
+                const responseTime = lastCheck ? `${lastCheck.response_time} ms` : 'Pending...';
+                
+                const statusBadge = lastCheck 
+                    ? (isUp 
+                        ? `<span class="text-xs bg-emerald-500/10 text-emerald-400 font-semibold px-2.5 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> UP (${responseTime})</span>`
+                        : `<span class="text-xs bg-red-500/10 text-red-400 font-semibold px-2.5 py-1 rounded-full border border-red-500/20 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span> DOWN (${responseTime})</span>`)
+                    : `<span class="text-xs bg-slate-800 text-slate-400 px-2.5 py-1 rounded-full border border-slate-700">Checking...</span>`;
+
+                return `
+                    <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div class="overflow-hidden">
+                            <p class="font-medium text-white truncate max-w-[240px] sm:max-w-md">${s.url}</p>
+                            <p class="text-xs text-slate-400 mt-0.5">Monitoring active</p>
+                        </div>
+                        <div class="flex items-center justify-between w-full sm:w-auto gap-3 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-800">
+                            ${statusBadge}
+                            <button data-id="${s.id}" data-user="${userId}" class="delete-btn text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 font-medium px-3 py-1 rounded-lg transition">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const siteId = parseInt(e.currentTarget.getAttribute('data-id'), 10);
+                    const uId = e.currentTarget.getAttribute('data-user');
+                    deleteSite(siteId, uId);
+                });
+            });
+        }
 
         async function deleteSite(siteId, userId) {
             if (confirm("Are you sure you want to delete this website from monitoring?")) {
                 const { error } = await _supabase.from('sites').delete().eq('id', siteId);
                 if (error) alert(error.message);
-                else loadSites(userId);
+                else await loadSites(userId);
             }
         }
 
-        // Form Submission with Strict Regex Validation
+        // Unos novog sajta
         document.getElementById('add-site-form').addEventListener('submit', async function (e) {
             e.preventDefault();
             e.stopPropagation();
@@ -324,7 +362,6 @@
                 url = 'https://' + url;
             }
 
-            // 1. Sintaksna provera (Regex)
             const domainRegex = /^https?:\/\/([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/;
             if (!domainRegex.test(url)) {
                 alert("Invalid domain format! Example: example.com or https://example.com");
@@ -335,7 +372,6 @@
             submitBtn.innerText = "Checking site...";
 
             try {
-                // 2. Provera da li domen postoji preko DNS-a
                 const domainOnly = new URL(url).hostname;
                 const checkResponse = await fetch(`https://dns.google/resolve?name=${domainOnly}`, { method: 'GET' });
                 const dnsData = await checkResponse.json();
@@ -347,24 +383,21 @@
                     return false;
                 }
 
-                // 3. Provera limita sajtova prema planu (Free plan limit = 1)
                 const { data: { user } } = await _supabase.auth.getUser();
 
                 if (user) {
-                    // Izbroj koliko sajtova korisnik već ima
                     const { count, error: countError } = await _supabase
                         .from('sites')
                         .select('*', { count: 'exact', head: true })
                         .eq('user_id', user.id);
 
-                    if (!countError && count >= 1) { // Free plan limit 1
+                    if (!countError && count >= 1) {
                         alert("You have reached the limit of your Free Plan (1 website). Upgrade to Pro to monitor more websites!");
                         submitBtn.disabled = false;
                         submitBtn.innerText = "Add Site";
                         return;
                     }
 
-                    // 4. Upis u Supabase ako su svi uslovi zadovoljeni
                     const { error } = await _supabase.from('sites').insert([{ url, user_id: user.id }]);
                     if (error) {
                         if (error.code === '23505') {
@@ -374,8 +407,8 @@
                         }
                     } else {
                         urlInput.value = '';
-                        loadSites(user.id);
-                        runUptimeChecks(user.id);
+                        await loadSites(user.id);
+                        await runUptimeChecks(user.id);
                     }
                 }
             } catch (err) {
@@ -387,11 +420,10 @@
             }
         });
 
-        // Function for automated background uptime checks
+        // Provera dostupnosti sajtova
         async function runUptimeChecks(userId) {
             console.log("Starting uptime checks...");
             
-            // 1. Fetch sites belonging to the logged-in user
             const { data: sites, error } = await _supabase
                 .from('sites')
                 .select('*')
@@ -402,7 +434,6 @@
                 return;
             }
 
-            // 2. Iterate through each site and test connectivity
             for (const site of sites) {
                 const startTime = performance.now();
                 let status = 'DOWN';
@@ -410,7 +441,7 @@
 
                 try {
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+                    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
                     await fetch(site.url, { 
                         method: 'GET', 
@@ -428,7 +459,6 @@
                     responseTime = 10000;
                 }
 
-                // 3. Log results into the 'checks' database table
                 const { error: insertError } = await _supabase
                     .from('checks')
                     .insert([{ 
@@ -443,6 +473,9 @@
                     console.log(`Checked ${site.url}: Status -> ${status} (${responseTime}ms)`);
                 }
             }
+            
+            // Osvežavamo vizuelni prikaz sa novim podacima
+            await loadSites(userId);
             console.log("Uptime checks completed successfully.");
         }
     </script>
