@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
-    // Provera tajnog ključa (opciono radi bezbednosti ili direktan poziv od Vercel Cron-a)
     const SUPABASE_URL = 'https://pomwrqrmvjxcnqeaaylk.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvbXdycXJtdmp4Y25xZWFheWxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMzM4MTgsImV4cCI6MjEwNzkwOTgxOH0.YLlPyAagO59cxPDQ69iP-7w9iPj6MX-3MM2sEgobV-A';
     
@@ -9,16 +8,39 @@ export default async function handler(req, res) {
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
     try {
-        // 1. Povuci sve sajtove iz baze
+        // 1. Povuci sve sajtove
         const { data: sites, error: sitesErr } = await _supabase.from('sites').select('*');
 
         if (sitesErr || !sites || sites.length === 0) {
             return res.status(200).json({ message: 'No sites to check.' });
         }
 
+        const now = new Date();
         const results = [];
 
         for (const site of sites) {
+            // Uzmi poslednju proveru za ovaj sajt da vidimo kada je poslednji put proveren
+            const { data: lastCheckData } = await _supabase
+                .from('checks')
+                .select('checked_at')
+                .eq('site_id', site.id)
+                .order('checked_at', { ascending: false })
+                .limit(1);
+
+            let intervalMinutes = 5; // Podrazumevano za Free (5 minuta)
+            // Ovde kasnije možemo dodati uslov za Pro (2 min) ili Power (0.5 min / 30 sek)
+            
+            if (lastCheckData && lastCheckData.length > 0) {
+                const lastCheckedTime = new Date(lastCheckData[0].checked_at);
+                const diffMinutes = (now - lastCheckedTime) / 1000 / 60;
+
+                // Ako nije prošlo dovoljno vremena prema intervallu, preskoči ovaj sajt
+                if (diffMinutes < intervalMinutes) {
+                    continue; 
+                }
+            }
+
+            // 2. Izvrši proveru sajta
             const startTime = Date.now();
             let status = 'DOWN';
             let responseTime = 0;
@@ -40,16 +62,15 @@ export default async function handler(req, res) {
                 status = 'DOWN';
             }
 
-            // 2. Zabeleži proveru u bazu
+            // 3. Upis u bazu
             await _supabase.from('checks').insert([{ 
                 site_id: site.id, 
                 status: status, 
                 response_time: responseTime 
             }]);
 
-            // 3. Ako je sajt pao i imamo Resend API ključ, pošalji e-mail korisniku
+            // 4. Slanje email obaveštenja ako je sajt pao
             if (status === 'DOWN' && RESEND_API_KEY) {
-                // Dobijamo email vlasnika sajta iz Supabase auth-a ako je dostupno ili preko povezanog profila
                 try {
                     const { data: userData } = await _supabase.auth.admin.getUserById(site.user_id).catch(() => ({ data: null }));
                     const userEmail = userData?.user?.email;
@@ -77,7 +98,7 @@ export default async function handler(req, res) {
             results.push({ url: site.url, status, responseTime });
         }
 
-        return res.status(200).json({ success: true, checked: results.length, details: results });
+        return res.status(200).json({ success: true, checkedCount: results.length, details: results });
     } catch (err) {
         return res.status(500).json({ error: err.message });
     }
