@@ -14,15 +14,10 @@
         <!-- Header / Navbar (Žuta pozadina, crni tekst i dugmad) -->
         <header class="bg-amber-400 py-3 px-4 sm:px-6 shadow-lg">
             <div class="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-4">
-                <!-- Logo sa mogućnošću ubacivanja tvoje slike umesto slova B -->
-                <div class="flex items-center gap-2 font-black text-xl tracking-tight text-slate-950">
-                    <!-- ZAMENI 'tvoj-logo.png' SA PUTANJOM DO TVOG LOGOA -->
-                    <img id="custom-b-logo" src="B.png" alt="B" class="w-7 h-7 object-contain hidden" onerror="this.classList.add('hidden'); document.getElementById('fallback-b-text').classList.remove('hidden');" onload="this.classList.remove('hidden'); document.getElementById('fallback-b-text').classList.add('hidden');">
-                    
-                    <!-- Rezervno slovo B dok ne ubaciš sliku -->
-                    <span id="fallback-b-text" class="text-2xl font-black text-slate-950">B</span>
-                    
-                    <span class="text-slate-950">ocydiumPulse</span>
+         <!-- Logo BocydiumPulse -->
+                <div class="flex items-center gap-1 font-black text-2xl tracking-tight text-slate-950">
+                    <img src="logo.png" alt="B" class="h-9 w-auto object-contain -mr-1">
+                    <span>ocydiumPulse</span>
                 </div>
 
                 <div id="nav-actions" class="flex items-center gap-4">
