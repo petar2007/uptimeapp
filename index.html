@@ -105,7 +105,33 @@
             </div>
         </div>
     </div>
+<!-- Referral Badge Section (Free Power Plan) -->
+<div class="bg-slate-900 border border-blue-500/30 p-5 rounded-xl mb-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
+        <div>
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                🎁 Get Free Power Plan (€9/mo value)
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">
+                Embed our tiny status badge on your website to instantly unlock all Power Plan features for free!
+            </p>
+        </div>
+        <button onclick="toggleBadgeCode()" class="text-xs bg-blue-600 hover:bg-blue-500 text-white font-medium px-3 py-1.5 rounded-lg transition whitespace-nowrap">
+            Get Badge Code
+        </button>
+    </div>
 
+    <!-- Hidden Badge Code Box -->
+    <div id="badge-code-box" class="hidden mt-4 pt-3 border-t border-slate-800">
+        <p class="text-xs text-slate-300 mb-2">Copy and paste this HTML code into your website's footer:</p>
+        <div class="relative">
+            <textarea id="badge-code-input" readonly class="w-full bg-slate-950 border border-slate-800 text-slate-300 text-xs p-3 rounded-lg font-mono focus:outline-none resize-none h-20"><a href="https://uptimeapp-public.vercel.app" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#0f172a;color:#94a3b8;border:1px solid #334155;padding:4px 10px;border-radius:9999px;font-family:sans-serif;font-size:12px;text-decoration:none;"><span style="width:8px;height:8px;background-color:#22c55e;border-radius:50%;display:inline-block;"></span>Monitored by <strong style="color:#f8fafc;">UptimeMonitor</strong></a></textarea>
+            <button onclick="copyBadgeCode()" id="copy-badge-btn" class="absolute top-2 right-2 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded transition">
+                Copy
+            </button>
+        </div>
+    </div>
+</div>
     <!-- Auth Modal -->
     <div id="auth-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full relative shadow-2xl">
@@ -499,6 +525,22 @@ async function runUptimeChecks(userId) {
         console.error("Error running uptime checks:", err);
     }
 }
+ // Pomoćne funkcije za Referral Badge
+        function toggleBadgeCode() {
+            const box = document.getElementById('badge-code-box');
+            box.classList.toggle('hidden');
+        }
+
+        function copyBadgeCode() {
+            const copyText = document.getElementById('badge-code-input');
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value);
+            
+            const btn = document.getElementById('copy-badge-btn');
+            btn.innerText = "Copied!";
+            setTimeout(() => { btn.innerText = "Copy"; }, 2000);
+        }
     </script>
 </body>
 </html>
