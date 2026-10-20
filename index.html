@@ -423,66 +423,82 @@
         });
 
         // Uptime Engine
-        async function runUptimeChecks(userId) {
-            console.log("Starting uptime checks...");
-            
-            try {
-                const { data: sites, error } = await _supabase
-                    .from('sites')
-                    .select('*')
-                    .eq('user_id', userId);
+        // Uptime Engine sa Email obaveštenjem pri padu
+async function runUptimeChecks(userId) {
+    console.log("Starting uptime checks...");
+    
+    try {
+        // Uzimamo i email ulogovanog korisnika
+        const { data: { user } } = await _supabase.auth.getUser();
+        const userEmail = user ? user.email : null;
 
-                if (error || !sites || sites.length === 0) {
-                    console.log("No sites available to check.");
-                    return;
-                }
+        const { data: sites, error } = await _supabase
+            .from('sites')
+            .select('*')
+            .eq('user_id', userId);
 
-                for (const site of sites) {
-                    const startTime = performance.now();
-                    let status = 'DOWN';
-                    let responseTime = 0;
-
-                    try {
-                        const controller = new AbortController();
-                        const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-                        await fetch(site.url, { 
-                            method: 'GET', 
-                            mode: 'no-cors', 
-                            signal: controller.signal 
-                        });
-                        
-                        clearTimeout(timeoutId);
-                        const endTime = performance.now();
-                        responseTime = Math.round(endTime - startTime);
-                        status = 'UP';
-                    } catch (err) {
-                        console.warn(`Site unreachable (${site.url}):`, err);
-                        status = 'DOWN';
-                        responseTime = 10000;
-                    }
-
-                    const { error: insertError } = await _supabase
-                        .from('checks')
-                        .insert([{ 
-                            site_id: site.id, 
-                            status: status, 
-                            response_time: responseTime 
-                        }]);
-
-                    if (insertError) {
-                        console.error("Error saving check log:", insertError.message);
-                    } else {
-                        console.log(`Checked ${site.url}: Status -> ${status} (${responseTime}ms)`);
-                    }
-                }
-                
-                await loadSites(userId);
-                console.log("Uptime checks completed successfully.");
-            } catch (err) {
-                console.error("Error running uptime checks:", err);
-            }
+        if (error || !sites || sites.length === 0) {
+            console.log("No sites available to check.");
+            return;
         }
+
+        for (const site of sites) {
+            const startTime = performance.now();
+            let status = 'DOWN';
+            let responseTime = 0;
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+                await fetch(site.url, { 
+                    method: 'GET', 
+                    mode: 'no-cors', 
+                    signal: controller.signal 
+                });
+                
+                clearTimeout(timeoutId);
+                const endTime = performance.now();
+                responseTime = Math.round(endTime - startTime);
+                status = 'UP';
+            } catch (err) {
+                console.warn(`Site unreachable (${site.url}):`, err);
+                status = 'DOWN';
+                responseTime = 10000;
+            }
+
+            // Ako je sajt pao, šaljemo email obaveštenje
+            if (status === 'DOWN' && userEmail) {
+                try {
+                    await fetch('/api/send-alert', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            email: userEmail,
+                            siteUrl: site.url,
+                            status: 'DOWN'
+                        })
+                    });
+                    console.log(`Alert email triggered for ${site.url} to ${userEmail}`);
+                } catch (emailErr) {
+                    console.error("Failed to send alert email:", emailErr);
+                }
+            }
+
+            // Upis u bazu
+            await _supabase.from('checks').insert([{ 
+                site_id: site.id, 
+                status: status, 
+                response_time: responseTime 
+            }]);
+        }
+        
+        await loadSites(userId);
+        console.log("Uptime checks completed successfully.");
+    } catch (err) {
+        console.error("Error running uptime checks:", err);
+    }
+}
     </script>
 </body>
 </html>
