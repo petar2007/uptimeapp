@@ -1,589 +1,392 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BocydiumPulse - Simple & Reliable Website Monitoring</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Simple website uptime monitoring.">
+  <title>BocydiumPulse — Website Monitoring</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-black text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between">
-
-    <div>
-        <!-- Header / Navbar (Žuta pozadina, crni tekst i dugmad) -->
-        <header class="bg-amber-400 py-3 px-4 sm:px-6 shadow-lg">
-            <div class="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-4">
-         <!-- Logo BocydiumPulse -->
-                <div class="flex items-center gap-1 font-black text-2xl tracking-tight text-slate-950">
-                    <svg class="h-16 w-auto -mr-1 ml-0.5 -translate-y-1.5" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Antene -->
-                        <circle cx="185" cy="130" r="28" fill="currentColor"/>
-                        <circle cx="315" cy="130" r="28" fill="currentColor"/>
-                        <path d="M185 130L222 200" stroke="currentColor" stroke-width="22" stroke-linecap="round"/>
-                        <path d="M315 130L278 200" stroke="currentColor" stroke-width="22" stroke-linecap="round"/>
-                        
-                        <!-- Pulse / Impuls -->
-                        <path d="M228 135 H238 L244 110 L250 160 L256 125 L262 145 L272 135 H278" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-                        
-                        <!-- Slovo B -->
-                        <path d="M168 200 H300 C340 200 365 220 365 255 C365 285 340 302 305 305 C348 308 375 328 375 368 C375 410 340 430 292 430 H168 V200 Z M230 250 V282 H288 C302 282 310 274 310 266 C310 258 302 250 288 250 H230 Z M230 330 V380 H295 C310 380 320 371 320 355 C320 339 310 330 295 330 H230 Z" fill="currentColor"/>
-                    </svg>
-                    <span>ocydiumPulse</span>
-                </div>
-                      
-
-                <div id="nav-actions" class="flex items-center gap-4">
-                    <a href="#pricing" onclick="scrollToPricing(event)" class="text-sm text-slate-900 font-semibold hover:text-black hidden sm:inline">Pricing</a>
-                    <button onclick="showAuthModal()" id="auth-nav-btn" class="bg-slate-950 hover:bg-slate-800 text-amber-400 text-sm px-4 py-2 rounded-lg font-bold transition shadow-md">Get Started / Login</button>
-                </div>
-            </div>
-        </header>
-
-        <!-- Landing Page View -->
-        <div id="landing-view">
-            <!-- Hero Section -->
-            <section class="max-w-4xl mx-auto text-center py-16 px-6">
-                <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight mb-6 leading-tight">
-                    Instant Downtime Alerts <br/><span class="text-amber-400">Without the Complexity</span>
-                </h1>
-                <p class="text-base sm:text-lg text-slate-400 mb-8 max-w-2xl mx-auto">
-                    Monitor your websites globally. Get notified immediately via email the moment your service goes down.
-                </p>
-                <button onclick="showAuthModal()" class="bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-6 py-3 rounded-xl transition shadow-lg shadow-amber-500/20">Start Monitoring Now</button>
-            </section>
-
-            <!-- Pricing Section -->
-            <section id="pricing" class="max-w-5xl mx-auto py-12 px-6 border-t border-zinc-800">
-                <h2 class="text-2xl sm:text-3xl font-bold text-center mb-10 text-slate-100">Simple, Transparent Pricing</h2>
-                <div class="grid md:grid-cols-3 gap-6">
-                    <!-- Free Plan -->
-                    <div class="bg-zinc-950 border border-zinc-800 p-6 rounded-2xl flex flex-col justify-between">
-                        <div>
-                            <h3 class="text-xl font-bold mb-2">Free Plan</h3>
-                            <p class="text-3xl font-extrabold mb-6">$0 <span class="text-sm font-normal text-slate-400">/ forever</span></p>
-                            <ul class="text-sm text-slate-300 space-y-3 mb-6">
-                                <li>✅ 1 Website monitored</li>
-                                <li>✅ 5-minute check interval</li>
-                                <li>✅ Email alerts</li>
-                            </ul>
-                        </div>
-                        <button onclick="showAuthModal()" class="w-full bg-zinc-900 hover:bg-zinc-800 text-slate-200 py-2.5 rounded-lg text-sm font-medium transition">Choose Free</button>
-                    </div>
-
-                    <!-- Pro Plan -->
-                    <div class="bg-zinc-950 border border-amber-400 p-6 rounded-2xl flex flex-col justify-between relative shadow-xl shadow-amber-500/10">
-                        <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-amber-400 text-slate-950 text-xs uppercase px-3 py-1 rounded-full font-black tracking-wider">Popular</div>
-                        <div>
-                            <h3 class="text-xl font-bold mb-2">Pro Plan</h3>
-                            <p class="text-3xl font-extrabold mb-6">€4 <span class="text-sm font-normal text-slate-400">/ month</span></p>
-                            <ul class="text-sm text-slate-300 space-y-3 mb-6">
-                                <li>✅ Up to 5 websites</li>
-                                <li>✅ 2-minute check interval</li>
-                                <li>✅ Priority email alerts</li>
-                            </ul>
-                        </div>
-                        <a href="TVOJ_LEMON_SQUEEZY_PRO_CHECKOUT_URL" target="_blank" class="block text-center w-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold py-2.5 rounded-lg text-sm transition">Choose Pro (€4/mo)</a>
-                    </div>
-
-                    <!-- Power Plan -->
-                    <div class="bg-zinc-950 border border-zinc-800 p-6 rounded-2xl flex flex-col justify-between">
-                        <div>
-                            <h3 class="text-xl font-bold mb-2">Power Plan</h3>
-                            <p class="text-3xl font-extrabold mb-6">€9 <span class="text-sm font-normal text-slate-400">/ month</span></p>
-                            <ul class="text-sm text-slate-300 space-y-3 mb-6">
-                                <li>✅ Up to 20 websites</li>
-                                <li>✅ 30-second check interval</li>
-                                <li>✅ Referral badge option</li>
-                            </ul>
-                        </div>
-                        <a href="TVOJ_LEMON_SQUEEZY_POWER_CHECKOUT_URL" target="_blank" class="block text-center w-full bg-zinc-900 hover:bg-zinc-800 text-slate-200 py-2.5 rounded-lg text-sm font-medium transition">Choose Power (€9/mo)</a>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <!-- Dashboard View -->
-        <div id="dashboard-view" class="hidden max-w-2xl mx-auto py-8 px-4">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h2 class="text-xl sm:text-2xl font-bold">Your Monitored Sites</h2>
-                    <p id="user-display-email" class="text-xs text-slate-400 mt-1"></p>
-                </div>
-                <button onclick="logout()" class="text-sm text-slate-400 hover:text-white bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg transition">Logout</button><button onclick="deleteAccount()" class="text-sm text-red-400 hover:text-red-300 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg transition">Delete Account</button>
-            </div>
-
-            <!-- Add Site Form -->
-            <form id="add-site-form" class="flex flex-col sm:flex-row gap-3 mb-6">
-                <input type="text" id="site-url" placeholder="https://example.com" required class="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400">
-                <button type="submit" id="add-site-btn" class="bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-5 py-2.5 rounded-lg text-sm transition">Add Site</button>
-            </form>
-
-            <!-- Referral Badge Section (Free Power Plan) -->
-            <div class="bg-zinc-950 border border-amber-400/30 p-5 rounded-xl mb-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
-                    <div>
-                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                            🎁 Get Free Power Plan (€9/mo value)
-                        </h3>
-                        <p class="text-xs text-slate-400 mt-0.5">
-                            Embed our tiny status badge on your website to instantly unlock all Power Plan features for free!
-                        </p>
-                    </div>
-                    <button onclick="toggleBadgeCode()" class="text-xs bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-3 py-1.5 rounded-lg transition whitespace-nowrap">
-                        Get Badge Code
-                    </button>
-                </div>
-
-                <!-- Hidden Badge Code Box -->
-                <div id="badge-code-box" class="hidden mt-4 pt-3 border-t border-zinc-800">
-                    <p class="text-xs text-slate-300 mb-2">Copy and paste this HTML code into your website's footer:</p>
-                    <div class="relative">
-                        <!-- OVDE JE ZAMENJEN LINK NA TVOJU NOVU VERCEL ADRESU -->
-                        <textarea id="badge-code-input" readonly class="w-full bg-black border border-zinc-800 text-amber-400 text-xs p-3 rounded-lg font-mono focus:outline-none resize-none h-20"><a href="https://bocydiumpulse.vercel.app" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#000000;color:#f59e0b;border:1px solid #78350f;padding:4px 10px;border-radius:9999px;font-family:sans-serif;font-size:12px;text-decoration:none;"><span style="width:8px;height:8px;background-color:#22c55e;border-radius:50%;display:inline-block;"></span>Monitored by <strong style="color:#ffffff;">BocydiumPulse</strong></a></textarea>
-                        <button onclick="copyBadgeCode()" id="copy-badge-btn" class="absolute top-2 right-2 text-xs bg-zinc-800 hover:bg-zinc-700 text-slate-200 px-2.5 py-1 rounded transition">
-                            Copy
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sites List -->
-            <div id="sites-list" class="space-y-3">
-                <p class="text-slate-500 text-sm">Loading sites...</p>
-            </div>
-        </div>
+<body class="min-h-screen bg-black text-slate-100 antialiased">
+  <header class="bg-amber-400 px-4 py-4 text-slate-950 shadow-lg">
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
+      <a href="#" class="flex items-center gap-2 font-black tracking-tight text-2xl" aria-label="BocydiumPulse home">
+        <svg class="h-12 w-12" viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="28" cy="15" r="7" fill="currentColor"/><circle cx="72" cy="15" r="7" fill="currentColor"/>
+          <path d="M28 20L39 35M72 20L61 35M43 26H48L51 16L55 36L59 26H64" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M24 35H58C72 35 80 42 80 53C80 62 74 67 64 68C76 69 83 76 83 85C83 95 74 99 60 99H24Z" fill="currentColor" transform="translate(0 -8) scale(1 .92)"/>
+          <path d="M42 42V52H57C61 52 63 50 63 47S61 42 57 42ZM42 65V79H59C64 79 66 77 66 72S63 65 59 65Z" fill="#FFC323"/>
+        </svg>
+        <span>BocydiumPulse</span>
+      </a>
+      <nav class="flex items-center gap-4">
+        <a href="#pricing" class="hidden text-sm font-semibold hover:underline sm:inline">Pricing</a>
+        <button id="auth-nav-btn" type="button" class="rounded-lg bg-slate-950 px-4 py-2 text-sm font-bold text-amber-400">Get Started / Login</button>
+      </nav>
     </div>
+  </header>
 
-    <!-- Auth Modal -->
-    <div id="auth-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-zinc-950 border border-zinc-800 p-6 rounded-2xl max-w-sm w-full relative shadow-2xl">
-            <button onclick="hideAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl font-bold">&times;</button>
-            <h3 class="text-xl font-bold mb-4">Account Access</h3>
-
-            <!-- Google Login Button -->
-            <button type="button" onclick="handleGoogleAuth()" class="w-full mb-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white font-medium py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 transition">
-                <svg class="w-4 h-4" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                </svg>
-                Continue with Google
-            </button>
-
-            <div class="relative flex py-2 items-center mb-4">
-                <div class="flex-grow border-t border-zinc-800"></div>
-                <span class="flex-shrink mx-3 text-xs text-slate-500 uppercase">or email</span>
-                <div class="flex-grow border-t border-zinc-800"></div>
-            </div>
-
-            <!-- Red Error Alert Area -->
-            <div id="auth-error-msg" class="hidden mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-lg"></div>
-
-            <form id="auth-form" class="space-y-4" onsubmit="event.preventDefault();">
-                <div>
-                    <label class="text-xs text-slate-400">Email</label>
-                    <input type="email" id="auth-email" required class="w-full bg-black border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400 mt-1">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400">Password</label>
-                    <input type="password" id="auth-password" required class="w-full bg-black border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400 mt-1">
-                </div>
-                <div class="flex gap-2 pt-2">
-                    <button type="button" id="login-btn" onclick="handleAuth('login')" class="flex-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold py-2.5 rounded-lg text-sm transition disabled:opacity-50">Login</button>
-                    <button type="button" id="signup-btn" onclick="handleAuth('signup')" class="flex-1 bg-zinc-900 hover:bg-zinc-800 text-slate-200 py-2.5 rounded-lg text-sm font-medium transition disabled:opacity-50">Sign Up</button>
-                </div>
-            </form>
+  <main class="mx-auto w-full max-w-6xl flex-1 px-4">
+    <section id="landing-view">
+      <div class="mx-auto max-w-4xl py-16 text-center sm:py-24">
+        <h1 class="mb-6 text-4xl font-extrabold leading-tight tracking-tight sm:text-6xl">Know when your website goes down. <span class="text-amber-400">Keep it simple.</span></h1>
+        <p class="mx-auto mb-8 max-w-2xl text-lg text-slate-400">A simple dashboard for website availability. Monitoring and alert features are under development; do not rely on this prototype for critical alerts.</p>
+        <button type="button" data-open-auth class="rounded-xl bg-amber-400 px-7 py-4 font-bold text-slate-950 shadow-lg shadow-amber-500/20">Start Monitoring</button>
+      </div>
+      <section id="pricing" class="border-t border-zinc-800 py-12">
+        <h2 class="mb-10 text-center text-3xl font-bold">Simple, Transparent Pricing</h2>
+        <p class="mx-auto mb-8 max-w-2xl text-center text-sm text-amber-200">Prototype pricing only. Paid plans are not available until checkout, plan enforcement, and monitoring have been tested.</p>
+        <div class="grid gap-6 md:grid-cols-3">
+          <article class="flex flex-col justify-between rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
+            <div><h3 class="mb-2 text-xl font-bold">Free</h3><p class="mb-6 text-3xl font-extrabold">€0 <span class="text-sm font-normal text-slate-400">/ forever</span></p><ul class="mb-6 space-y-3 text-sm text-slate-300"><li>1 website</li><li>Prototype dashboard</li><li>No guaranteed alerts</li></ul></div>
+            <button type="button" data-open-auth class="rounded-lg bg-zinc-800 py-3 font-semibold">Try the prototype</button>
+          </article>
+          <article class="relative flex flex-col justify-between rounded-2xl border border-amber-400 bg-zinc-950 p-6">
+            <div><span class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-amber-400 px-3 py-1 text-xs font-black uppercase text-black">Planned</span><h3 class="mb-2 text-xl font-bold">Pro</h3><p class="mb-6 text-3xl font-extrabold">€4 <span class="text-sm font-normal text-slate-400">/ month</span></p><ul class="mb-6 space-y-3 text-sm text-slate-300"><li>Up to 5 websites</li><li>Planned faster checks</li><li>Planned email alerts</li></ul></div>
+            <button type="button" disabled class="cursor-not-allowed rounded-lg bg-zinc-800 py-3 text-slate-500">Coming soon</button>
+          </article>
+          <article class="flex flex-col justify-between rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
+            <div><h3 class="mb-2 text-xl font-bold">Power</h3><p class="mb-6 text-3xl font-extrabold">€9 <span class="text-sm font-normal text-slate-400">/ month</span></p><ul class="mb-6 space-y-3 text-sm text-slate-300"><li>Up to 20 websites</li><li>Planned advanced checks</li><li>Planned status badge</li></ul></div>
+            <button type="button" disabled class="cursor-not-allowed rounded-lg bg-zinc-800 py-3 text-slate-500">Coming soon</button>
+          </article>
         </div>
+      </section>
+    </section>
+
+    <section id="dashboard-view" class="mx-auto hidden max-w-3xl py-8">
+      <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div><h2 class="text-2xl font-bold">Your Monitored Sites</h2><p id="user-display-email" class="mt-1 break-all text-sm text-slate-400"></p></div>
+        <div class="flex gap-2"><button id="logout-btn" type="button" class="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm">Logout</button><button id="delete-account-btn" type="button" class="rounded-lg border border-red-900 bg-red-950 px-3 py-2 text-sm text-red-300">Delete account</button></div>
+      </div>
+      <div id="app-message" class="mb-4 hidden rounded-lg border p-3 text-sm" role="status" aria-live="polite"></div>
+      <form id="add-site-form" class="mb-6 flex flex-col gap-3 sm:flex-row">
+        <label class="sr-only" for="site-url">Website URL</label>
+        <input id="site-url" type="url" inputmode="url" placeholder="https://example.com" required maxlength="2048" class="min-w-0 flex-1 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 text-white focus:border-amber-400 focus:outline-none">
+        <button id="add-site-btn" type="submit" class="rounded-lg bg-amber-400 px-5 py-3 font-bold text-black">Add site</button>
+      </form>
+      <p class="mb-5 text-xs text-slate-500">Prototype: status checks run from this open browser tab and are not a reliable background monitoring service. Do not use for critical alerts.</p>
+      <div id="sites-list" class="space-y-3"><p class="text-sm text-slate-500">Loading…</p></div>
+    </section>
+  </main>
+
+  <div id="auth-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+    <div class="relative w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl">
+      <button id="close-auth-btn" type="button" class="absolute right-4 top-3 text-2xl text-slate-400" aria-label="Close dialog">&times;</button>
+      <h2 id="auth-title" class="mb-4 text-xl font-bold">Account access</h2>
+      <div id="auth-error-msg" class="mb-4 hidden rounded-lg border border-red-900 bg-red-950 p-3 text-sm text-red-200" role="alert"></div>
+      <button id="google-btn" type="button" class="mb-4 w-full rounded-lg border border-zinc-800 bg-zinc-900 py-3">Continue with Google</button>
+      <div class="mb-4 text-center text-xs uppercase text-slate-500">or email</div>
+      <form id="auth-form" class="space-y-4">
+        <div><label for="auth-email" class="mb-1 block text-sm text-slate-400">Email</label><input id="auth-email" type="email" autocomplete="email" required maxlength="254" class="w-full rounded-lg border border-zinc-800 bg-black px-3 py-2 focus:border-amber-400 focus:outline-none"></div>
+        <div><label for="auth-password" class="mb-1 block text-sm text-slate-400">Password</label><input id="auth-password" type="password" autocomplete="current-password" required minlength="8" class="w-full rounded-lg border border-zinc-800 bg-black px-3 py-2 focus:border-amber-400 focus:outline-none"></div>
+        <div class="flex gap-2"><button id="login-btn" type="submit" class="flex-1 rounded-lg bg-amber-400 py-2.5 font-bold text-black">Login</button><button id="signup-btn" type="button" class="flex-1 rounded-lg bg-zinc-800 py-2.5 font-semibold">Sign up</button></div>
+      </form>
     </div>
+  </div>
 
-    <!-- Footer -->
-    <footer class="border-t border-zinc-900 py-6 text-center text-xs text-slate-500">
-        &copy; 2026 BocydiumPulse. All rights reserved.
-    </footer>
+  <footer class="mt-12 border-t border-zinc-900 px-4 py-6 text-center text-xs text-slate-500">
+    <p>© 2026 BocydiumPulse. Prototype.</p>
+    <p class="mt-2">Privacy Policy and Terms of Service must be added before public commercial launch.</p>
+  </footer>
 
-    <!-- Supabase Auth & Uptime Script -->
-    <script>
-        const SUPABASE_URL = 'https://pomwrqrmvjxcnqeaaylk.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvbXdycXJtdmp4Y25xZWFheWxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMzM4MTgsImV4cCI6MjEwNzkwOTgxOH0.YLlPyAagO59cxPDQ69iP-7w9iPj6MX-3MM2sEgobV-A';
+<script>
+(() => {
+  'use strict';
 
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  // This is the Supabase anon/publishable key, intended for browser use.
+  // NEVER put a service_role key or any secret key in this file.
+  const SUPABASE_URL = 'https://pomwrqrmvjxcnqeaaylk.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbGciOiJIUzI1NiIsInJlZiI6InBvbXdycXJtdmp4Y25xZWFheWxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMzM4MTgsImV4cCI6MjEwNzkwOTgxOH0.YLlPyAagO59cxPDQ69iP-7w9iPj6MX-3MM2sEgobV-A';
 
-        function showAuthModal() {
-            clearAuthError();
-            document.getElementById('auth-modal').classList.remove('hidden');
-        }
-        function hideAuthModal() {
-            clearAuthError();
-            document.getElementById('auth-modal').classList.add('hidden');
-        }
+  const $ = (id) => document.getElementById(id);
+  const client = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  if (!client) {
+    showMessage('app-message', 'Supabase library failed to load. Refresh the page and try again.', true);
+    return;
+  }
 
-        function showAuthError(msg) {
-            const errDiv = document.getElementById('auth-error-msg');
-            errDiv.textContent = msg;
-            errDiv.classList.remove('hidden');
-        }
+  let currentUser = null;
+  let checkTimer = null;
+  let checking = false;
 
-        function clearAuthError() {
-            const errDiv = document.getElementById('auth-error-msg');
-            errDiv.textContent = '';
-            errDiv.classList.add('hidden');
-        }
+  function showMessage(id, message, isError = false) {
+    const el = $(id);
+    if (!el) return;
+    el.textContent = message;
+    el.classList.remove('hidden', 'border-red-900', 'bg-red-950', 'text-red-200', 'border-emerald-900', 'bg-emerald-950', 'text-emerald-200');
+    el.classList.add(...(isError
+      ? ['border-red-900', 'bg-red-950', 'text-red-200']
+      : ['border-emerald-900', 'bg-emerald-950', 'text-emerald-200']));
+  }
+  function hideMessage(id) { $(id)?.classList.add('hidden'); }
+  function authError(message) { showMessage('auth-error-msg', message, true); }
+  function clearAuthError() { hideMessage('auth-error-msg'); $('auth-error-msg').textContent = ''; }
+  function openAuth() { clearAuthError(); $('auth-modal').classList.remove('hidden'); $('auth-modal').classList.add('flex'); $('auth-email').focus(); }
+  function closeAuth() { $('auth-modal').classList.add('hidden'); $('auth-modal').classList.remove('flex'); clearAuthError(); }
 
-        // Auth state listener
-        _supabase.auth.onAuthStateChange(async (event, session) => {
-            if (session) {
-                hideAuthModal();
-                document.getElementById('landing-view').classList.add('hidden');
-                document.getElementById('dashboard-view').classList.remove('hidden');
-                document.getElementById('auth-nav-btn').classList.add('hidden');
-                
-                const emailElem = document.getElementById('user-display-email');
-                if (emailElem && session.user) {
-                    emailElem.textContent = `Logged in as: ${session.user.email}`;
-                }
+  $('auth-nav-btn').addEventListener('click', openAuth);
+  document.querySelectorAll('[data-open-auth]').forEach(btn => btn.addEventListener('click', openAuth));
+  $('close-auth-btn').addEventListener('click', closeAuth);
+  $('auth-modal').addEventListener('click', (e) => { if (e.target === $('auth-modal')) closeAuth(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAuth(); });
 
-                await loadSites(session.user.id);
-                await runUptimeChecks(session.user.id);
+  function setBusy(busy) {
+    ['login-btn', 'signup-btn', 'google-btn'].forEach(id => { $(id).disabled = busy; $(id).classList.toggle('opacity-50', busy); });
+  }
 
-                if (!window.checkInterval) {
-                    window.checkInterval = setInterval(() => {
-                        runUptimeChecks(session.user.id);
-                    }, 60000);
-                }
-            } else {
-                if (window.checkInterval) {
-                    clearInterval(window.checkInterval);
-                    window.checkInterval = null;
-                }
-                document.getElementById('landing-view').classList.remove('hidden');
-                document.getElementById('dashboard-view').classList.add('hidden');
-                document.getElementById('auth-nav-btn').classList.remove('hidden');
-            }
-        });
+  async function authAction(action) {
+    clearAuthError();
+    const email = $('auth-email').value.trim();
+    const password = $('auth-password').value;
+    if (!email || !password) return authError('Enter your email and password.');
+    if (password.length < 8) return authError('Use a password with at least 8 characters.');
 
-        // Google Authentication
-        async function handleGoogleAuth() {
-            const { error } = await _supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: window.location.origin
-                }
-            });
-            if (error) showAuthError(error.message);
-        }
-
-        // Email & Password Auth
-        async function handleAuth(type) {
-            clearAuthError();
-            const email = document.getElementById('auth-email').value.trim();
-            const password = document.getElementById('auth-password').value;
-
-            if (!email || !password) {
-                showAuthError("Please fill in both email and password.");
-                return;
-            }
-
-            const loginBtn = document.getElementById('login-btn');
-            const signupBtn = document.getElementById('signup-btn');
-            loginBtn.disabled = true;
-            signupBtn.disabled = true;
-            loginBtn.innerText = "Processing...";
-
-            let result;
-            if (type === 'signup') {
-                result = await _supabase.auth.signUp({ email, password });
-                if (!result.error) {
-                    showAuthError("Success! Check your email for the confirmation link.");
-                }
-            } else {
-                result = await _supabase.auth.signInWithPassword({ email, password });
-            }
-
-            loginBtn.disabled = false;
-            signupBtn.disabled = false;
-            loginBtn.innerText = "Login";
-
-            if (result.error) {
-                if (result.error.message.includes("Invalid login credentials")) {
-                    showAuthError("Wrong email or password.");
-                } else if (result.error.message.includes("User already registered")) {
-                    showAuthError("An account with this email already exists.");
-                } else {
-                    showAuthError(result.error.message);
-                }
-            }
-        }
-
-        async function logout() {
-            await _supabase.auth.signOut();
-        }
-async function deleteAccount() {
-    if (confirm("Are you sure you want to delete your account? This action is permanent and all your monitored sites and data will be permanently erased.")) {
-        try {
-            // Pozivamo SQL funkciju koju smo malopre napravili u Supabase-u
-            const { error } = await _supabase.rpc('delete_user_account');
-
-            if (error) {
-                alert("Error deleting account: " + error.message);
-                return;
-            }
-
-            // Odjavljujemo korisnika i osvežavamo stranicu
-            await _supabase.auth.signOut();
-            alert("Your account has been successfully deleted.");
-            window.location.reload();
-            
-        } catch (err) {
-            console.error("Error deleting account:", err);
-            alert("Could not delete account. Please try again.");
-        }
+    setBusy(true);
+    try {
+      let result;
+      if (action === 'signup') {
+        result = await client.auth.signUp({ email, password });
+        if (!result.error) authError('If sign-up succeeds, check your email for a confirmation link.');
+      } else {
+        result = await client.auth.signInWithPassword({ email, password });
+      }
+      if (result.error) authError(action === 'login' ? 'Could not log in. Check your details and try again.' : 'Could not create the account. Check the details and try again.');
+    } catch (error) {
+      authError('Authentication failed. Please try again.');
+      console.error('Authentication error:', error);
+    } finally {
+      setBusy(false);
     }
-}
-        // Učitavanje sajtova sa statusom
-        async function loadSites(userId) {
-            const sitesList = document.getElementById('sites-list');
-            
-            try {
-                const { data: sites, error } = await _supabase.from('sites').select('*').eq('user_id', userId);
-                
-                if (error || !sites || sites.length === 0) {
-                    sitesList.innerHTML = '<p class="text-slate-500 text-sm py-4 text-center">No sites added yet. Add your first URL above!</p>';
-                    return;
-                }
+  }
+  $('auth-form').addEventListener('submit', (e) => { e.preventDefault(); authAction('login'); });
+  $('signup-btn').addEventListener('click', () => authAction('signup'));
+  $('google-btn').addEventListener('click', async () => {
+    clearAuthError(); setBusy(true);
+    try {
+      const { error } = await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+      if (error) authError('Google sign-in is unavailable right now.');
+    } catch (error) {
+      authError('Google sign-in failed. Please try again.');
+      console.error(error);
+    } finally { setBusy(false); }
+  });
 
-                const siteIds = sites.map(s => s.id);
-                const { data: checks } = await _supabase
-                    .from('checks')
-                    .select('*')
-                    .in('site_id', siteIds);
+  async function getUser() {
+    const { data, error } = await client.auth.getUser();
+    if (error) throw error;
+    return data.user;
+  }
 
-                const latestChecks = {};
-                if (checks && checks.length > 0) {
-                    checks.forEach(check => {
-                        const existing = latestChecks[check.site_id];
-                        if (!existing || new Date(check.checked_at) > new Date(existing.checked_at)) {
-                            latestChecks[check.site_id] = check;
-                        }
-                    });
-                }
+  function showSignedOut() {
+    currentUser = null;
+    if (checkTimer) clearInterval(checkTimer);
+    checkTimer = null;
+    $('landing-view').classList.remove('hidden');
+    $('dashboard-view').classList.add('hidden');
+    $('auth-nav-btn').classList.remove('hidden');
+    $('user-display-email').textContent = '';
+  }
 
-                sitesList.innerHTML = sites.map(s => {
-                    const lastCheck = latestChecks[s.id];
-                    const isUp = lastCheck ? lastCheck.status === 'UP' : true;
-                    const responseTime = lastCheck ? `${lastCheck.response_time} ms` : 'Pending...';
-                    
-                    const statusBadge = lastCheck 
-                        ? (isUp 
-                            ? `<span class="text-xs bg-emerald-500/10 text-emerald-400 font-semibold px-2.5 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> UP (${responseTime})</span>`
-                            : `<span class="text-xs bg-red-500/10 text-red-400 font-semibold px-2.5 py-1 rounded-full border border-red-500/20 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span> DOWN (${responseTime})</span>`)
-                        : `<span class="text-xs bg-zinc-800 text-slate-400 px-2.5 py-1 rounded-full border border-zinc-700">Checking...</span>`;
+  async function showSignedIn(user) {
+    currentUser = user;
+    closeAuth();
+    $('landing-view').classList.add('hidden');
+    $('dashboard-view').classList.remove('hidden');
+    $('auth-nav-btn').classList.add('hidden');
+    $('user-display-email').textContent = `Logged in as: ${user.email || 'account'}`;
+    await loadSites();
+    // Browser-tab checks are only a prototype; this is not background monitoring.
+    if (checkTimer) clearInterval(checkTimer);
+    checkTimer = setInterval(() => { if (currentUser && !document.hidden) runBrowserChecks(); }, 60000);
+    if (!document.hidden) await runBrowserChecks();
+  }
 
-                    return `
-                        <div class="bg-zinc-950 border border-zinc-800 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                            <div class="overflow-hidden">
-                                <p class="font-medium text-white truncate max-w-[240px] sm:max-w-md">${s.url}</p>
-                                <p class="text-xs text-slate-400 mt-0.5">Monitoring active</p>
-                            </div>
-                            <div class="flex items-center justify-between w-full sm:w-auto gap-3 border-t sm:border-t-0 pt-2 sm:pt-0 border-zinc-800">
-                                ${statusBadge}
-                                <button data-id="${s.id}" data-user="${userId}" class="delete-btn text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 font-medium px-3 py-1 rounded-lg transition">
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
+  client.auth.onAuthStateChange((event, session) => {
+    // Defer work so Supabase auth callbacks do not perform nested auth calls.
+    queueMicrotask(async () => {
+      if (session?.user) {
+        try { await showSignedIn(session.user); }
+        catch (error) { console.error('Dashboard setup error:', error); showMessage('app-message', 'Could not load the dashboard. Check database permissions.', true); }
+      } else {
+        showSignedOut();
+      }
+    });
+  });
 
-                document.querySelectorAll('.delete-btn').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const siteId = parseInt(e.currentTarget.getAttribute('data-id'), 10);
-                        const uId = e.currentTarget.getAttribute('data-user');
-                        deleteSite(siteId, uId);
-                    });
-                });
-            } catch (err) {
-                console.error("Error loading sites:", err);
-            }
-        }
+  $('logout-btn').addEventListener('click', async () => {
+    const { error } = await client.auth.signOut();
+    if (error) showMessage('app-message', 'Could not log out. Please try again.', true);
+  });
 
-        async function deleteSite(siteId, userId) {
-            if (confirm("Are you sure you want to delete this website from monitoring?")) {
-                const { error } = await _supabase.from('sites').delete().eq('id', siteId);
-                if (error) alert(error.message);
-                else await loadSites(userId);
-            }
-        }
+  async function loadSites() {
+    if (!currentUser) return;
+    const list = $('sites-list');
+    list.replaceChildren();
+    const loading = document.createElement('p');
+    loading.className = 'text-sm text-slate-500';
+    loading.textContent = 'Loading sites…';
+    list.append(loading);
 
-        // Form Submission
-        document.getElementById('add-site-form').addEventListener('submit', async function (e) {
-            e.preventDefault();
-            e.stopPropagation();
+    const { data: sites, error } = await client.from('sites')
+      .select('id,url,created_at')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false });
 
-            const urlInput = document.getElementById('site-url');
-            let url = urlInput.value.trim();
-            const submitBtn = document.getElementById('add-site-btn');
-
-            if (!url) {
-                alert("Please enter a URL.");
-                return false;
-            }
-
-            if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                url = 'https://' + url;
-            }
-
-            const domainRegex = /^https?:\/\/([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/;
-            if (!domainRegex.test(url)) {
-                alert("Invalid domain format! Example: example.com or https://example.com");
-                return false;
-            }
-
-            submitBtn.disabled = true;
-            submitBtn.innerText = "Checking site...";
-
-            try {
-                const domainOnly = new URL(url).hostname;
-                const checkResponse = await fetch(`https://dns.google/resolve?name=${domainOnly}`, { method: 'GET' });
-                const dnsData = await checkResponse.json();
-
-                if (!dnsData.Answer || dnsData.Answer.length === 0) {
-                    alert("This website domain does not exist or has no active DNS records!");
-                    submitBtn.disabled = false;
-                    submitBtn.innerText = "Add Site";
-                    return false;
-                }
-
-                const { data: { user } } = await _supabase.auth.getUser();
-
-                if (user) {
-                    const { count, error: countError } = await _supabase
-                        .from('sites')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('user_id', user.id);
-
-                    if (!countError && count >= 1) {
-                        alert("You have reached the limit of your Free Plan (1 website). Upgrade to Pro to monitor more websites!");
-                        submitBtn.disabled = false;
-                        submitBtn.innerText = "Add Site";
-                        return;
-                    }
-
-                    const { error } = await _supabase.from('sites').insert([{ url, user_id: user.id }]);
-                    if (error) {
-                        if (error.code === '23505') {
-                            alert("You are already monitoring this website!");
-                        } else {
-                            alert(error.message);
-                        }
-                    } else {
-                        urlInput.value = '';
-                        await loadSites(user.id);
-                        await runUptimeChecks(user.id);
-                    }
-                }
-            } catch (err) {
-                console.error("Error during site addition:", err);
-                alert("Could not verify or add website. Please try again.");
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerText = "Add Site";
-            }
-        });
-
-        // Uptime Engine
-        async function runUptimeChecks(userId) {
-            console.log("Starting uptime checks...");
-            
-            try {
-                const { data: sites, error } = await _supabase
-                    .from('sites')
-                    .select('*')
-                    .eq('user_id', userId);
-
-                if (error || !sites || sites.length === 0) {
-                    console.log("No sites available to check.");
-                    return;
-                }
-
-                for (const site of sites) {
-                    const startTime = performance.now();
-                    let status = 'DOWN';
-                    let responseTime = 0;
-
-                    try {
-                        const controller = new AbortController();
-                        const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-                        await fetch(site.url, { 
-                            method: 'GET', 
-                            mode: 'no-cors', 
-                            signal: controller.signal 
-                        });
-                        
-                        clearTimeout(timeoutId);
-                        const endTime = performance.now();
-                        responseTime = Math.round(endTime - startTime);
-                        status = 'UP';
-                    } catch (err) {
-                        console.warn(`Site unreachable (${site.url}):`, err);
-                        status = 'DOWN';
-                        responseTime = 10000;
-                    }
-
-                    const { error: insertError } = await _supabase
-                        .from('checks')
-                        .insert([{ 
-                            site_id: site.id, 
-                            status: status, 
-                            response_time: responseTime 
-                        }]);
-
-                    if (insertError) {
-                        console.error("Error saving check log:", insertError.message);
-                    } else {
-                        console.log(`Checked ${site.url}: Status -> ${status} (${responseTime}ms)`);
-                    }
-                }
-                
-                await loadSites(userId);
-                console.log("Uptime checks completed successfully.");
-            } catch (err) {
-                console.error("Error running uptime checks:", err);
-            }
-        }
-
-        // Pomoćne funkcije za Referral Badge
-        function toggleBadgeCode() {
-            const box = document.getElementById('badge-code-box');
-            box.classList.toggle('hidden');
-        }
-
-        function copyBadgeCode() {
-            const copyText = document.getElementById('badge-code-input');
-            copyText.select();
-            copyText.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(copyText.value);
-            
-            const btn = document.getElementById('copy-badge-btn');
-            btn.innerText = "Copied!";
-            setTimeout(() => { btn.innerText = "Copy"; }, 2000);
-        }
-        function scrollToPricing(e) {
-    if (e) e.preventDefault();
-    
-    const landingView = document.getElementById('landing-view');
-    const pricingSection = document.getElementById('pricing');
-
-    // Ako je korisnik ulogovan i landing view je sakriven, nakratko prikaži landing ili skroluj
-    if (landingView.classList.contains('hidden')) {
-        landingView.classList.remove('hidden');
-        pricingSection.scrollIntoView({ behavior: 'smooth' });
-    } else {
-        pricingSection.scrollIntoView({ behavior: 'smooth' });
+    if (error) {
+      list.replaceChildren();
+      const p = document.createElement('p');
+      p.className = 'text-sm text-red-300';
+      p.textContent = 'Could not load sites. Check the sites table and its RLS policies.';
+      list.append(p);
+      console.error('Load sites error:', error);
+      return;
     }
-}
-    </script>
+
+    list.replaceChildren();
+    if (!sites?.length) {
+      const p = document.createElement('p');
+      p.className = 'text-sm text-slate-500';
+      p.textContent = 'No sites added yet. Add your first URL above.';
+      list.append(p);
+      return;
+    }
+
+    for (const site of sites) {
+      const card = document.createElement('article');
+      card.className = 'rounded-xl border border-zinc-800 bg-zinc-950 p-4';
+      const url = document.createElement('p');
+      url.className = 'break-all font-medium text-white';
+      url.textContent = site.url;
+      const note = document.createElement('p');
+      note.className = 'mt-1 text-xs text-slate-400';
+      note.textContent = 'Prototype only — browser checks are not reliable uptime monitoring.';
+      const row = document.createElement('div');
+      row.className = 'mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800 pt-3';
+      const status = document.createElement('span');
+      status.className = 'text-sm text-slate-400';
+      status.textContent = 'Status not verified';
+      status.dataset.siteId = String(site.id);
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'rounded-lg bg-red-950 px-3 py-1.5 text-sm text-red-300';
+      del.textContent = 'Delete';
+      del.addEventListener('click', () => deleteSite(site.id));
+      row.append(status, del);
+      card.append(url, note, row);
+      list.append(card);
+    }
+  }
+
+  function normalizeUrl(value) {
+    let parsed;
+    try { parsed = new URL(value.includes('://') ? value : `https://${value}`); }
+    catch { throw new Error('Enter a valid website URL, such as https://example.com.'); }
+    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Only HTTP and HTTPS URLs are allowed.');
+    if (!parsed.hostname || !parsed.hostname.includes('.') || parsed.username || parsed.password) {
+      throw new Error('Enter a public website hostname without credentials.');
+    }
+    if (parsed.hostname === 'localhost' || parsed.hostname.endsWith('.localhost') ||
+        parsed.hostname.endsWith('.local') || /^\d{1,3}(?:\.\d{1,3}){3}$/.test(parsed.hostname) ||
+        parsed.hostname.includes(':') || parsed.hostname.endsWith('.internal')) {
+      throw new Error('Local, private, and IP-address targets are not accepted in this prototype.');
+    }
+    return parsed.href;
+  }
+
+  $('add-site-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideMessage('app-message');
+    if (!currentUser) return showMessage('app-message', 'Please log in again.', true);
+    const btn = $('add-site-btn');
+    btn.disabled = true;
+    btn.textContent = 'Adding…';
+    try {
+      const url = normalizeUrl($('site-url').value.trim());
+      const { count, error: countError } = await client.from('sites')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', currentUser.id);
+      if (countError) throw new Error('Could not verify your site limit. Try again.');
+      if ((count ?? 0) >= 1) throw new Error('Prototype limit: one site per account.');
+      const { error } = await client.from('sites').insert({ url, user_id: currentUser.id });
+      if (error) {
+        if (error.code === '23505') throw new Error('You are already monitoring this website.');
+        throw new Error('Could not add the website. Check database permissions and try again.');
+      }
+      $('site-url').value = '';
+      showMessage('app-message', 'Website added. Remember: this prototype does not provide reliable background monitoring.');
+      await loadSites();
+      await runBrowserChecks();
+    } catch (error) {
+      showMessage('app-message', error.message || 'Could not add the website.', true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Add site';
+    }
+  });
+
+  async function runBrowserChecks() {
+    if (!currentUser || checking || document.hidden) return;
+    checking = true;
+    try {
+      const { data: sites, error } = await client.from('sites').select('id,url').eq('user_id', currentUser.id);
+      if (error) throw error;
+      for (const site of (sites || [])) {
+        // Browser fetch cannot reliably determine HTTP status because of CORS.
+        // We deliberately do not write a false UP/DOWN result to the database.
+        const status = document.querySelector(`[data-site-id="${CSS.escape(String(site.id))}"]`);
+        if (status) status.textContent = 'Monitoring requires a server-side checker';
+      }
+    } catch (error) {
+      console.error('Prototype check notice:', error);
+    } finally { checking = false; }
+  }
+
+  async function deleteSite(siteId) {
+    if (!currentUser || !confirm('Delete this website from your list?')) return;
+    try {
+      const { error } = await client.from('sites').delete().eq('id', siteId).eq('user_id', currentUser.id);
+      if (error) throw error;
+      showMessage('app-message', 'Website deleted.');
+      await loadSites();
+    } catch (error) {
+      showMessage('app-message', 'Could not delete the website. Check database permissions.', true);
+      console.error('Delete site error:', error);
+    }
+  }
+
+  $('delete-account-btn').addEventListener('click', async () => {
+    if (!currentUser) return;
+    const confirmed = confirm('Permanently delete your account and associated data? This cannot be undone.');
+    if (!confirmed) return;
+    const typed = prompt('For confirmation, type DELETE');
+    if (typed !== 'DELETE') return showMessage('app-message', 'Account deletion cancelled.');
+    try {
+      // This RPC must be created and secured in Supabase before this feature can work.
+      const { error } = await client.rpc('delete_user_account');
+      if (error) throw error;
+      await client.auth.signOut();
+      alert('Account deletion request completed.');
+    } catch (error) {
+      showMessage('app-message', 'Account deletion is not configured or failed. Contact support; do not assume the account was deleted.', true);
+      console.error('Account deletion error:', error);
+    }
+  });
+
+  // Initial session restore.
+  client.auth.getSession().then(({ data, error }) => {
+    if (error) {
+      showMessage('app-message', 'Could not restore your session. Refresh and log in again.', true);
+      return;
+    }
+    if (data.session?.user) showSignedIn(data.session.user).catch(err => {
+      console.error(err);
+      showMessage('app-message', 'Could not load the dashboard. Check database setup.', true);
+    });
+    else showSignedOut();
+  });
+})();
+</script>
 </body>
 </html>
