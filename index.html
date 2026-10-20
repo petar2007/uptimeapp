@@ -190,17 +190,14 @@
                 document.getElementById('dashboard-view').classList.remove('hidden');
                 document.getElementById('auth-nav-btn').classList.add('hidden');
                 
-                // Show logged in email
                 const emailElem = document.getElementById('user-display-email');
                 if (emailElem && session.user) {
                     emailElem.textContent = `Logged in as: ${session.user.email}`;
                 }
 
-                // Inicijalno učitavanje i prva provera
                 await loadSites(session.user.id);
                 await runUptimeChecks(session.user.id);
 
-                // Automatska provera na svakih 60 sekundi dok je korisnik na Dashboard-u
                 if (!window.checkInterval) {
                     window.checkInterval = setInterval(() => {
                         runUptimeChecks(session.user.id);
@@ -274,76 +271,71 @@
             await _supabase.auth.signOut();
         }
 
-        // Učitavanje sajtova sa poslednjim zabeleženim statusom
+        // Učitavanje sajtova sa sigurno uparenim poslednjim statusom
         async function loadSites(userId) {
             const sitesList = document.getElementById('sites-list');
-            const { data: sites, error } = await _supabase.from('sites').select('*').eq('user_id', userId);
             
-            if (error || !sites || sites.length === 0) {
-                sitesList.innerHTML = '<p class="text-slate-500 text-sm py-4 text-center">No sites added yet. Add your first URL above!</p>';
-                return;
-            }
-
-            // Uzimamo sve provere za korisnikove sajtove
-            const siteIds = sites.map(s => s.id);
-            const { data: checks } = await _supabase
-                .from('checks')
-                .select('*')
-                .in('site_id', siteIds)
-                .order('created_at', { ascending: false });
-
-            // Kreiramo mapu u kojoj čuvamo samo NAJNOVIJU proveru za svaki sajt
-            const latestChecks = {};
-            if (checks && checks.length > 0) {
-                checks.forEach(check => {
-                    if (!latestChecks[check.site_id]) {
-                        latestChecks[check.site_id] = check;
-                    }
-                });
-            }
-            const latestChecks = {};
-            if (checks) {
-                checks.forEach(check => {
-                    if (!latestChecks[check.site_id]) {
-                        latestChecks[check.site_id] = check;
-                    }
-                });
-            }
-
-            sitesList.innerHTML = sites.map(s => {
-                const lastCheck = latestChecks[s.id];
-                const isUp = lastCheck ? lastCheck.status === 'UP' : true;
-                const responseTime = lastCheck ? `${lastCheck.response_time} ms` : 'Pending...';
+            try {
+                const { data: sites, error } = await _supabase.from('sites').select('*').eq('user_id', userId);
                 
-                const statusBadge = lastCheck 
-                    ? (isUp 
-                        ? `<span class="text-xs bg-emerald-500/10 text-emerald-400 font-semibold px-2.5 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> UP (${responseTime})</span>`
-                        : `<span class="text-xs bg-red-500/10 text-red-400 font-semibold px-2.5 py-1 rounded-full border border-red-500/20 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span> DOWN (${responseTime})</span>`)
-                    : `<span class="text-xs bg-slate-800 text-slate-400 px-2.5 py-1 rounded-full border border-slate-700">Checking...</span>`;
+                if (error || !sites || sites.length === 0) {
+                    sitesList.innerHTML = '<p class="text-slate-500 text-sm py-4 text-center">No sites added yet. Add your first URL above!</p>';
+                    return;
+                }
 
-                return `
-                    <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                        <div class="overflow-hidden">
-                            <p class="font-medium text-white truncate max-w-[240px] sm:max-w-md">${s.url}</p>
-                            <p class="text-xs text-slate-400 mt-0.5">Monitoring active</p>
-                        </div>
-                        <div class="flex items-center justify-between w-full sm:w-auto gap-3 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-800">
-                            ${statusBadge}
-                            <button data-id="${s.id}" data-user="${userId}" class="delete-btn text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 font-medium px-3 py-1 rounded-lg transition">
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+                const siteIds = sites.map(s => s.id);
+                const { data: checks } = await _supabase
+                    .from('checks')
+                    .select('*')
+                    .in('site_id', siteIds);
 
-            document.querySelectorAll('.delete-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const siteId = parseInt(e.currentTarget.getAttribute('data-id'), 10);
-                    const uId = e.currentTarget.getAttribute('data-user');
-                    deleteSite(siteId, uId);
+                const latestChecks = {};
+                if (checks && checks.length > 0) {
+                    checks.forEach(check => {
+                        const existing = latestChecks[check.site_id];
+                        if (!existing || new Date(check.checked_at) > new Date(existing.checked_at)) {
+                            latestChecks[check.site_id] = check;
+                        }
+                    });
+                }
+
+                sitesList.innerHTML = sites.map(s => {
+                    const lastCheck = latestChecks[s.id];
+                    const isUp = lastCheck ? lastCheck.status === 'UP' : true;
+                    const responseTime = lastCheck ? `${lastCheck.response_time} ms` : 'Pending...';
+                    
+                    const statusBadge = lastCheck 
+                        ? (isUp 
+                            ? `<span class="text-xs bg-emerald-500/10 text-emerald-400 font-semibold px-2.5 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> UP (${responseTime})</span>`
+                            : `<span class="text-xs bg-red-500/10 text-red-400 font-semibold px-2.5 py-1 rounded-full border border-red-500/20 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span> DOWN (${responseTime})</span>`)
+                        : `<span class="text-xs bg-slate-800 text-slate-400 px-2.5 py-1 rounded-full border border-slate-700">Checking...</span>`;
+
+                    return `
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                            <div class="overflow-hidden">
+                                <p class="font-medium text-white truncate max-w-[240px] sm:max-w-md">${s.url}</p>
+                                <p class="text-xs text-slate-400 mt-0.5">Monitoring active</p>
+                            </div>
+                            <div class="flex items-center justify-between w-full sm:w-auto gap-3 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-800">
+                                ${statusBadge}
+                                <button data-id="${s.id}" data-user="${userId}" class="delete-btn text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 font-medium px-3 py-1 rounded-lg transition">
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                document.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const siteId = parseInt(e.currentTarget.getAttribute('data-id'), 10);
+                        const uId = e.currentTarget.getAttribute('data-user');
+                        deleteSite(siteId, uId);
+                    });
                 });
-            });
+            } catch (err) {
+                console.error("Error loading sites:", err);
+            }
         }
 
         async function deleteSite(siteId, userId) {
@@ -354,7 +346,7 @@
             }
         }
 
-        // Unos novog sajta
+        // Form Submission
         document.getElementById('add-site-form').addEventListener('submit', async function (e) {
             e.preventDefault();
             e.stopPropagation();
@@ -430,63 +422,66 @@
             }
         });
 
-        // Provera dostupnosti sajtova
+        // Uptime Engine
         async function runUptimeChecks(userId) {
             console.log("Starting uptime checks...");
             
-            const { data: sites, error } = await _supabase
-                .from('sites')
-                .select('*')
-                .eq('user_id', userId);
+            try {
+                const { data: sites, error } = await _supabase
+                    .from('sites')
+                    .select('*')
+                    .eq('user_id', userId);
 
-            if (error || !sites || sites.length === 0) {
-                console.log("No sites available to check.");
-                return;
-            }
-
-            for (const site of sites) {
-                const startTime = performance.now();
-                let status = 'DOWN';
-                let responseTime = 0;
-
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-                    await fetch(site.url, { 
-                        method: 'GET', 
-                        mode: 'no-cors', 
-                        signal: controller.signal 
-                    });
-                    
-                    clearTimeout(timeoutId);
-                    const endTime = performance.now();
-                    responseTime = Math.round(endTime - startTime);
-                    status = 'UP';
-                } catch (err) {
-                    console.warn(`Site unreachable (${site.url}):`, err);
-                    status = 'DOWN';
-                    responseTime = 10000;
+                if (error || !sites || sites.length === 0) {
+                    console.log("No sites available to check.");
+                    return;
                 }
 
-                const { error: insertError } = await _supabase
-                    .from('checks')
-                    .insert([{ 
-                        site_id: site.id, 
-                        status: status, 
-                        response_time: responseTime 
-                    }]);
+                for (const site of sites) {
+                    const startTime = performance.now();
+                    let status = 'DOWN';
+                    let responseTime = 0;
 
-                if (insertError) {
-                    console.error("Error saving check log:", insertError.message);
-                } else {
-                    console.log(`Checked ${site.url}: Status -> ${status} (${responseTime}ms)`);
+                    try {
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+                        await fetch(site.url, { 
+                            method: 'GET', 
+                            mode: 'no-cors', 
+                            signal: controller.signal 
+                        });
+                        
+                        clearTimeout(timeoutId);
+                        const endTime = performance.now();
+                        responseTime = Math.round(endTime - startTime);
+                        status = 'UP';
+                    } catch (err) {
+                        console.warn(`Site unreachable (${site.url}):`, err);
+                        status = 'DOWN';
+                        responseTime = 10000;
+                    }
+
+                    const { error: insertError } = await _supabase
+                        .from('checks')
+                        .insert([{ 
+                            site_id: site.id, 
+                            status: status, 
+                            response_time: responseTime 
+                        }]);
+
+                    if (insertError) {
+                        console.error("Error saving check log:", insertError.message);
+                    } else {
+                        console.log(`Checked ${site.url}: Status -> ${status} (${responseTime}ms)`);
+                    }
                 }
+                
+                await loadSites(userId);
+                console.log("Uptime checks completed successfully.");
+            } catch (err) {
+                console.error("Error running uptime checks:", err);
             }
-            
-            // Osvežavamo vizuelni prikaz sa novim podacima
-            await loadSites(userId);
-            console.log("Uptime checks completed successfully.");
         }
     </script>
 </body>
