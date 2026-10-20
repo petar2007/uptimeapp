@@ -284,13 +284,23 @@
                 return;
             }
 
+            // Uzimamo sve provere za korisnikove sajtove
             const siteIds = sites.map(s => s.id);
             const { data: checks } = await _supabase
                 .from('checks')
                 .select('*')
                 .in('site_id', siteIds)
-                .order('checked_at', { ascending: false });
+                .order('created_at', { ascending: false });
 
+            // Kreiramo mapu u kojoj čuvamo samo NAJNOVIJU proveru za svaki sajt
+            const latestChecks = {};
+            if (checks && checks.length > 0) {
+                checks.forEach(check => {
+                    if (!latestChecks[check.site_id]) {
+                        latestChecks[check.site_id] = check;
+                    }
+                });
+            }
             const latestChecks = {};
             if (checks) {
                 checks.forEach(check => {
