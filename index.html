@@ -34,7 +34,7 @@
                       
 
                 <div id="nav-actions" class="flex items-center gap-4">
-                    <a href="#pricing" class="text-sm text-slate-900 font-semibold hover:text-black hidden sm:inline">Pricing</a>
+                    <a href="#pricing" onclick="scrollToPricing(event)" class="text-sm text-slate-900 font-semibold hover:text-black hidden sm:inline">Pricing</a>
                     <button onclick="showAuthModal()" id="auth-nav-btn" class="bg-slate-950 hover:bg-slate-800 text-amber-400 text-sm px-4 py-2 rounded-lg font-bold transition shadow-md">Get Started / Login</button>
                 </div>
             </div>
@@ -110,7 +110,7 @@
                     <h2 class="text-xl sm:text-2xl font-bold">Your Monitored Sites</h2>
                     <p id="user-display-email" class="text-xs text-slate-400 mt-1"></p>
                 </div>
-                <button onclick="logout()" class="text-sm text-slate-400 hover:text-white bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg transition">Logout</button>
+                <button onclick="logout()" class="text-sm text-slate-400 hover:text-white bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg transition">Logout</button><button onclick="deleteAccount()" class="text-sm text-red-400 hover:text-red-300 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg transition">Delete Account</button>
             </div>
 
             <!-- Add Site Form -->
@@ -319,7 +319,28 @@
         async function logout() {
             await _supabase.auth.signOut();
         }
+async function deleteAccount() {
+    if (confirm("Are you sure you want to delete your account? This action is permanent and all your monitored sites and data will be permanently erased.")) {
+        try {
+            // Pozivamo SQL funkciju koju smo malopre napravili u Supabase-u
+            const { error } = await _supabase.rpc('delete_user_account');
 
+            if (error) {
+                alert("Error deleting account: " + error.message);
+                return;
+            }
+
+            // Odjavljujemo korisnika i osvežavamo stranicu
+            await _supabase.auth.signOut();
+            alert("Your account has been successfully deleted.");
+            window.location.reload();
+            
+        } catch (err) {
+            console.error("Error deleting account:", err);
+            alert("Could not delete account. Please try again.");
+        }
+    }
+}
         // Učitavanje sajtova sa statusom
         async function loadSites(userId) {
             const sitesList = document.getElementById('sites-list');
@@ -549,6 +570,20 @@
             btn.innerText = "Copied!";
             setTimeout(() => { btn.innerText = "Copy"; }, 2000);
         }
+        function scrollToPricing(e) {
+    if (e) e.preventDefault();
+    
+    const landingView = document.getElementById('landing-view');
+    const pricingSection = document.getElementById('pricing');
+
+    // Ako je korisnik ulogovan i landing view je sakriven, nakratko prikaži landing ili skroluj
+    if (landingView.classList.contains('hidden')) {
+        landingView.classList.remove('hidden');
+        pricingSection.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        pricingSection.scrollIntoView({ behavior: 'smooth' });
+    }
+}
     </script>
 </body>
 </html>
