@@ -1,4 +1,4 @@
-const RESEND_API_KEY = 're_QaCYF2yZ_GpE3Jh9FqXVj9qPWWf2hma2s';
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
 async function testEmail() {
   try {
