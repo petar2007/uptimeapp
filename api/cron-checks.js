@@ -2,9 +2,9 @@ import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
     const SUPABASE_URL = 'https://pomwrqrmvjxcnqeaaylk.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvbXdycXJtdmp4Y25xZWFheWxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMzM4MTgsImV4cCI6MjEwNzkwOTgxOH0.YLlPyAagO59cxPDQ69iP-7w9iPj6MX-3MM2sEgobV-A';
+    const SUPABASE_SERVICE_KEY = 'sb_secret_hFaEQPx-ViuEvDEOImL9WA_v03Ooefh';
     
-    const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const _supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
     try {
