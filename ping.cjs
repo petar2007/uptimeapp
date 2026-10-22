@@ -1,7 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
-import 'dotenv/config';
+const { createClient } = require('@supabase/supabase-js');
 
-const supabaseUrl = 'https://pomwrqrmvjxcnqeaaylk.supabase.co';
+const supabaseUrl = process.env.SUPABASE_URL || 'https://pomwrqrmvjxcnqeaaylk.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
 const resendApiKey = process.env.RESEND_API_KEY;
 
@@ -26,6 +25,9 @@ async function sendAlertEmail(recipientEmail, siteUrl, statusCode) {
     });
     if (res.ok) {
       console.log(`📧 Email alert successfully sent for ${siteUrl} to ${recipientEmail}`);
+    } else {
+      const errData = await res.json();
+      console.error('❌ Failed to send email:', errData);
     }
   } catch (err) {
     console.error('❌ Error sending email alert:', err.message);
@@ -35,7 +37,6 @@ async function sendAlertEmail(recipientEmail, siteUrl, statusCode) {
 async function runUptimeMonitor() {
   console.log('🚀 Starting global uptime monitoring engine...\n');
 
-  // Povlačimo direktno sajtove (bez join-a sa profilima koji pravi problem)
   const { data: sites, error: fetchError } = await supabase
     .from('sites')
     .select('id, url, user_id');
@@ -66,7 +67,6 @@ async function runUptimeMonitor() {
     const responseTime = Date.now() - startTime;
     console.log(`🌐 Target: ${site.url} | Status: ${statusCode} | Latency: ${responseTime}ms | Up: ${isUp}`);
 
-    // Ako je sajt pao, preko admin API-ja nalazimo email korisnika pomoću njegovog user_id
     if (!isUp && site.user_id) {
       try {
         const { data: userData } = await supabase.auth.admin.getUserById(site.user_id);
@@ -79,7 +79,6 @@ async function runUptimeMonitor() {
       }
     }
 
-    // Upis u bazu
     await supabase.from('checks').insert([{ 
       site_id: site.id, 
       status: isUp ? 'UP' : 'DOWN', 
