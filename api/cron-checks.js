@@ -1,14 +1,28 @@
 import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
-    const SUPABASE_URL = 'https://pomwrqrmvjxcnqeaaylk.supabase.co';
+    const SUPABASE_URL = process.env.SUPABASE_URL || 'https://pomwrqrmvjxcnqeaaylk.supabase.co';
     const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
     
+    if (!SUPABASE_SERVICE_KEY) {
+        return res.status(500).json({ error: 'Supabase service key is missing in environment variables.' });
+    }
+
     const _supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
+
     try {
-        // 1. Povuci sve sajtove
-        const { data: sites, error: sitesErr } = await _supabase.from('sites').select('*');
+        // 1. Povuci sve sajtove sa profilima (da imamo email direktno)
+        const { data: sites, error: sitesErr } = await _supabase
+            .from('sites')
+            .select(`
+                id,
+                url,
+                user_id,
+                profiles (
+                    email
+                )
+            `);
 
         if (sitesErr || !sites || sites.length === 0) {
             return res.status(200).json({ message: 'No sites to check.' });
@@ -18,7 +32,7 @@ export default async function handler(req, res) {
         const results = [];
 
         for (const site of sites) {
-            // Uzmi poslednju proveru za ovaj sajt da vidimo kada je poslednji put proveren
+            // Uzmi poslednju proveru za ovaj sajt
             const { data: lastCheckData } = await _supabase
                 .from('checks')
                 .select('checked_at')
@@ -26,14 +40,12 @@ export default async function handler(req, res) {
                 .order('checked_at', { ascending: false })
                 .limit(1);
 
-            let intervalMinutes = 5; // Podrazumevano za Free (5 minuta)
-            // Ovde kasnije možemo dodati uslov za Pro (2 min) ili Power (0.5 min / 30 sek)
+            let intervalMinutes = 5;
             
             if (lastCheckData && lastCheckData.length > 0) {
                 const lastCheckedTime = new Date(lastCheckData[0].checked_at);
                 const diffMinutes = (now - lastCheckedTime) / 1000 / 60;
 
-                // Ako nije prošlo dovoljno vremena prema intervallu, preskoči ovaj sajt
                 if (diffMinutes < intervalMinutes) {
                     continue; 
                 }
@@ -71,10 +83,9 @@ export default async function handler(req, res) {
             // 4. Slanje email obaveštenja ako je sajt pao
             if (status === 'DOWN' && RESEND_API_KEY) {
                 try {
-                    const { data: userData } = await _supabase.auth.admin.getUserById(site.user_id).catch(() => ({ data: null }));
-                    const userEmail = userData?.user?.email;
+                    const ownerEmail = site.profiles ? site.profiles.email : null;
 
-                    if (userEmail) {
+                    if (ownerEmail) {
                         await fetch('https://api.resend.com/emails', {
                             method: 'POST',
                             headers: {
@@ -83,7 +94,7 @@ export default async function handler(req, res) {
                             },
                             body: JSON.stringify({
                                 from: 'UptimeMonitor <onboarding@resend.dev>',
-                                to: [userEmail],
+                                to: [ownerEmail],
                                 subject: `🚨 ALERT: ${site.url} is DOWN!`,
                                 html: `<p>Your website <strong>${site.url}</strong> is currently unreachable.</p>`
                             })
@@ -100,5 +111,5 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true, checkedCount: results.length, details: results });
     } catch (err) {
         return res.status(500).json({ error: err.message });
-    }
+     }
 }
