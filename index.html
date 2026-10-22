@@ -11,27 +11,21 @@
 <body class="bg-black text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between">
 
     <div>
-        <!-- Header / Navbar (Žuta pozadina, crni tekst i dugmad) -->
+        <!-- Header / Navbar -->
         <header class="bg-amber-400 py-3 px-4 sm:px-6 shadow-lg">
             <div class="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-4">
-         <!-- Logo BocydiumPulse -->
+                <!-- Logo BocydiumPulse -->
                 <div class="flex items-center gap-1 font-black text-2xl tracking-tight text-slate-950">
                     <svg class="h-16 w-auto -mr-1 ml-0.5 -translate-y-1.5" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Antene -->
                         <circle cx="185" cy="130" r="28" fill="currentColor"/>
                         <circle cx="315" cy="130" r="28" fill="currentColor"/>
                         <path d="M185 130L222 200" stroke="currentColor" stroke-width="22" stroke-linecap="round"/>
                         <path d="M315 130L278 200" stroke="currentColor" stroke-width="22" stroke-linecap="round"/>
-                        
-                        <!-- Pulse / Impuls -->
                         <path d="M228 135 H238 L244 110 L250 160 L256 125 L262 145 L272 135 H278" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-                        
-                        <!-- Slovo B -->
                         <path d="M168 200 H300 C340 200 365 220 365 255 C365 285 340 302 305 305 C348 308 375 328 375 368 C375 410 340 430 292 430 H168 V200 Z M230 250 V282 H288 C302 282 310 274 310 266 C310 258 302 250 288 250 H230 Z M230 330 V380 H295 C310 380 320 371 320 355 C320 339 310 330 295 330 H230 Z" fill="currentColor"/>
                     </svg>
                     <span>ocydiumPulse</span>
                 </div>
-                      
 
                 <div id="nav-actions" class="flex items-center gap-4">
                     <a href="#pricing" onclick="scrollToPricing(event)" class="text-sm text-slate-900 font-semibold hover:text-black hidden sm:inline">Pricing</a>
@@ -42,7 +36,6 @@
 
         <!-- Landing Page View -->
         <div id="landing-view">
-            <!-- Hero Section -->
             <section class="max-w-4xl mx-auto text-center py-16 px-6">
                 <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight mb-6 leading-tight">
                     Instant Downtime Alerts <br/><span class="text-amber-400">Without the Complexity</span>
@@ -110,7 +103,10 @@
                     <h2 class="text-xl sm:text-2xl font-bold">Your Monitored Sites</h2>
                     <p id="user-display-email" class="text-xs text-slate-400 mt-1"></p>
                 </div>
-                <button onclick="logout()" class="text-sm text-slate-400 hover:text-white bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg transition">Logout</button><button onclick="deleteAccount()" class="text-sm text-red-400 hover:text-red-300 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg transition">Delete Account</button>
+                <div class="flex gap-2">
+                    <button onclick="logout()" class="text-sm text-slate-400 hover:text-white bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg transition">Logout</button>
+                    <button onclick="deleteAccount()" class="text-sm text-red-400 hover:text-red-300 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg transition">Delete Account</button>
+                </div>
             </div>
 
             <!-- Add Site Form -->
@@ -119,7 +115,7 @@
                 <button type="submit" id="add-site-btn" class="bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-5 py-2.5 rounded-lg text-sm transition">Add Site</button>
             </form>
 
-            <!-- Referral Badge Section (Free Power Plan) -->
+            <!-- Referral Badge Section -->
             <div class="bg-zinc-950 border border-amber-400/30 p-5 rounded-xl mb-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
                     <div>
@@ -135,11 +131,9 @@
                     </button>
                 </div>
 
-                <!-- Hidden Badge Code Box -->
                 <div id="badge-code-box" class="hidden mt-4 pt-3 border-t border-zinc-800">
                     <p class="text-xs text-slate-300 mb-2">Copy and paste this HTML code into your website's footer:</p>
                     <div class="relative">
-                        <!-- OVDE JE ZAMENJEN LINK NA TVOJU NOVU VERCEL ADRESU -->
                         <textarea id="badge-code-input" readonly class="w-full bg-black border border-zinc-800 text-amber-400 text-xs p-3 rounded-lg font-mono focus:outline-none resize-none h-20"><a href="https://bocydiumpulse.vercel.app" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#000000;color:#f59e0b;border:1px solid #78350f;padding:4px 10px;border-radius:9999px;font-family:sans-serif;font-size:12px;text-decoration:none;"><span style="width:8px;height:8px;background-color:#22c55e;border-radius:50%;display:inline-block;"></span>Monitored by <strong style="color:#ffffff;">BocydiumPulse</strong></a></textarea>
                         <button onclick="copyBadgeCode()" id="copy-badge-btn" class="absolute top-2 right-2 text-xs bg-zinc-800 hover:bg-zinc-700 text-slate-200 px-2.5 py-1 rounded transition">
                             Copy
@@ -161,9 +155,19 @@
             <button onclick="hideAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl font-bold">&times;</button>
             <h3 class="text-xl font-bold mb-4">Account Access</h3>
 
-            <!-- Google Login Button -->
-            <button type="button" onclick="handleGoogleAuth()" class="w-full mb-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white font-medium py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 transition">
-                <svg class="w-4 h-4" viewBox="0 0 24 24">
+            <!-- ToS & Privacy Checkbox Section (Uvek prisutan u modalu) -->
+            <div class="mb-4 bg-zinc-900/50 border border-zinc-800 p-3 rounded-xl">
+                <label class="flex items-start gap-2.5 text-xs text-slate-300 cursor-pointer">
+                    <input type="checkbox" id="terms-toggle" onchange="toggleTerms()" class="mt-0.5 accent-amber-400 cursor-pointer">
+                    <span>I agree to the <a href="#" target="_blank" class="text-amber-400 underline hover:text-amber-300">Terms of Service</a> & <a href="#" target="_blank" class="text-amber-400 underline hover:text-amber-300">Privacy Policy</a>.</span>
+                </label>
+                <!-- Crveno upozorenje ako uslovi nisu prihvaćeni -->
+                <p id="terms-warning" class="text-red-400 text-[11px] mt-2 hidden font-medium">⚠️ You must accept the Terms & Privacy Policy before signing in or registering.</p>
+            </div>
+
+            <!-- Google Login Button (Inicijalno Onemogućen i Bled) -->
+            <button type="button" id="google-auth-btn" onclick="handleGoogleAuth()" disabled class="w-full mb-4 bg-zinc-900 border border-zinc-800 text-slate-500 font-medium py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 transition opacity-40 cursor-not-allowed">
+                <svg class="w-4 h-4 opacity-50" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
@@ -191,8 +195,9 @@
                     <input type="password" id="auth-password" required class="w-full bg-black border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400 mt-1">
                 </div>
                 <div class="flex gap-2 pt-2">
-                    <button type="button" id="login-btn" onclick="handleAuth('login')" class="flex-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold py-2.5 rounded-lg text-sm transition disabled:opacity-50">Login</button>
-                    <button type="button" id="signup-btn" onclick="handleAuth('signup')" class="flex-1 bg-zinc-900 hover:bg-zinc-800 text-slate-200 py-2.5 rounded-lg text-sm font-medium transition disabled:opacity-50">Sign Up</button>
+                    <!-- Inicijalno onemogućena i bleda dugmad za Email Auth -->
+                    <button type="button" id="login-btn" onclick="handleAuth('login')" disabled class="flex-1 bg-zinc-900 border border-zinc-800 text-slate-500 font-bold py-2.5 rounded-lg text-sm transition opacity-40 cursor-not-allowed">Login</button>
+                    <button type="button" id="signup-btn" onclick="handleAuth('signup')" disabled class="flex-1 bg-zinc-900 border border-zinc-800 text-slate-500 font-medium py-2.5 rounded-lg text-sm transition opacity-40 cursor-not-allowed">Sign Up</button>
                 </div>
             </form>
         </div>
@@ -231,6 +236,51 @@
             errDiv.classList.add('hidden');
         }
 
+        // Kontrola za ToS Checkbox i otključavanje dugmadi
+        function toggleTerms() {
+            const isChecked = document.getElementById('terms-toggle').checked;
+            const warningElem = document.getElementById('terms-warning');
+            const googleBtn = document.getElementById('google-auth-btn');
+            const loginBtn = document.getElementById('login-btn');
+            const signupBtn = document.getElementById('signup-btn');
+
+            if (isChecked) {
+                warningElem.classList.add('hidden');
+                
+                // Otključavamo Google dugme
+                googleBtn.disabled = false;
+                googleBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+                googleBtn.classList.add('hover:bg-zinc-800', 'text-white');
+
+                // Otključavamo Login dugme
+                loginBtn.disabled = false;
+                loginBtn.classList.remove('opacity-40', 'cursor-not-allowed', 'bg-zinc-900', 'text-slate-500');
+                loginBtn.classList.add('bg-amber-400', 'hover:bg-amber-300', 'text-slate-950');
+
+                // Otključavamo Signup dugme
+                signupBtn.disabled = false;
+                signupBtn.classList.remove('opacity-40', 'cursor-not-allowed', 'bg-zinc-900', 'text-slate-500');
+                signupBtn.classList.add('bg-zinc-900', 'hover:bg-zinc-800', 'text-slate-200');
+            } else {
+                warningElem.classList.remove('hidden');
+                
+                // Zaključavamo Google dugme
+                googleBtn.disabled = true;
+                googleBtn.classList.add('opacity-40', 'cursor-not-allowed');
+                googleBtn.classList.remove('hover:bg-zinc-800', 'text-white');
+
+                // Zaključavamo Login dugme
+                loginBtn.disabled = true;
+                loginBtn.classList.add('opacity-40', 'cursor-not-allowed', 'bg-zinc-900', 'text-slate-500');
+                loginBtn.classList.remove('bg-amber-400', 'hover:bg-amber-300', 'text-slate-950');
+
+                // Zaključavamo Signup dugme
+                signupBtn.disabled = true;
+                signupBtn.classList.add('opacity-40', 'cursor-not-allowed', 'bg-zinc-900', 'text-slate-500');
+                signupBtn.classList.remove('bg-zinc-900', 'hover:bg-zinc-800', 'text-slate-200');
+            }
+        }
+
         // Auth state listener
         _supabase.auth.onAuthStateChange(async (event, session) => {
             if (session) {
@@ -265,6 +315,11 @@
 
         // Google Authentication
         async function handleGoogleAuth() {
+            const isChecked = document.getElementById('terms-toggle').checked;
+            if (!isChecked) {
+                document.getElementById('terms-warning').classList.remove('hidden');
+                return;
+            }
             const { error } = await _supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
@@ -277,6 +332,12 @@
         // Email & Password Auth
         async function handleAuth(type) {
             clearAuthError();
+            const isChecked = document.getElementById('terms-toggle').checked;
+            if (!isChecked) {
+                document.getElementById('terms-warning').classList.remove('hidden');
+                return;
+            }
+
             const email = document.getElementById('auth-email').value.trim();
             const password = document.getElementById('auth-password').value;
 
@@ -319,29 +380,28 @@
         async function logout() {
             await _supabase.auth.signOut();
         }
-async function deleteAccount() {
-    if (confirm("Are you sure you want to delete your account? This action is permanent and all your monitored sites and data will be permanently erased.")) {
-        try {
-            // Pozivamo SQL funkciju koju smo malopre napravili u Supabase-u
-            const { error } = await _supabase.rpc('delete_user_account');
 
-            if (error) {
-                alert("Error deleting account: " + error.message);
-                return;
+        async function deleteAccount() {
+            if (confirm("Are you sure you want to delete your account? This action is permanent and all your monitored sites and data will be permanently erased.")) {
+                try {
+                    const { error } = await _supabase.rpc('delete_user_account');
+
+                    if (error) {
+                        alert("Error deleting account: " + error.message);
+                        return;
+                    }
+
+                    await _supabase.auth.signOut();
+                    alert("Your account has been successfully deleted.");
+                    window.location.reload();
+                    
+                } catch (err) {
+                    console.error("Error deleting account:", err);
+                    alert("Could not delete account. Please try again.");
+                }
             }
-
-            // Odjavljujemo korisnika i osvežavamo stranicu
-            await _supabase.auth.signOut();
-            alert("Your account has been successfully deleted.");
-            window.location.reload();
-            
-        } catch (err) {
-            console.error("Error deleting account:", err);
-            alert("Could not delete account. Please try again.");
         }
-    }
-}
-        // Učitavanje sajtova sa statusom
+
         async function loadSites(userId) {
             const sitesList = document.getElementById('sites-list');
             
@@ -416,7 +476,6 @@ async function deleteAccount() {
             }
         }
 
-        // Form Submission
         document.getElementById('add-site-form').addEventListener('submit', async function (e) {
             e.preventDefault();
             e.stopPropagation();
@@ -492,20 +551,14 @@ async function deleteAccount() {
             }
         });
 
-        // Uptime Engine
         async function runUptimeChecks(userId) {
-            console.log("Starting uptime checks...");
-            
             try {
                 const { data: sites, error } = await _supabase
                     .from('sites')
                     .select('*')
                     .eq('user_id', userId);
 
-                if (error || !sites || sites.length === 0) {
-                    console.log("No sites available to check.");
-                    return;
-                }
+                if (error || !sites || sites.length === 0) return;
 
                 for (const site of sites) {
                     const startTime = performance.now();
@@ -527,34 +580,24 @@ async function deleteAccount() {
                         responseTime = Math.round(endTime - startTime);
                         status = 'UP';
                     } catch (err) {
-                        console.warn(`Site unreachable (${site.url}):`, err);
                         status = 'DOWN';
                         responseTime = 10000;
                     }
 
-                    const { error: insertError } = await _supabase
+                    await _supabase
                         .from('checks')
                         .insert([{ 
                             site_id: site.id, 
                             status: status, 
                             response_time: responseTime 
                         }]);
-
-                    if (insertError) {
-                        console.error("Error saving check log:", insertError.message);
-                    } else {
-                        console.log(`Checked ${site.url}: Status -> ${status} (${responseTime}ms)`);
-                    }
                 }
-                
                 await loadSites(userId);
-                console.log("Uptime checks completed successfully.");
             } catch (err) {
                 console.error("Error running uptime checks:", err);
             }
         }
 
-        // Pomoćne funkcije za Referral Badge
         function toggleBadgeCode() {
             const box = document.getElementById('badge-code-box');
             box.classList.toggle('hidden');
@@ -570,20 +613,19 @@ async function deleteAccount() {
             btn.innerText = "Copied!";
             setTimeout(() => { btn.innerText = "Copy"; }, 2000);
         }
-        function scrollToPricing(e) {
-    if (e) e.preventDefault();
-    
-    const landingView = document.getElementById('landing-view');
-    const pricingSection = document.getElementById('pricing');
 
-    // Ako je korisnik ulogovan i landing view je sakriven, nakratko prikaži landing ili skroluj
-    if (landingView.classList.contains('hidden')) {
-        landingView.classList.remove('hidden');
-        pricingSection.scrollIntoView({ behavior: 'smooth' });
-    } else {
-        pricingSection.scrollIntoView({ behavior: 'smooth' });
-    }
-}
+        function scrollToPricing(e) {
+            if (e) e.preventDefault();
+            const landingView = document.getElementById('landing-view');
+            const pricingSection = document.getElementById('pricing');
+
+            if (landingView.classList.contains('hidden')) {
+                landingView.classList.remove('hidden');
+                pricingSection.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                pricingSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
     </script>
 </body>
 </html>
