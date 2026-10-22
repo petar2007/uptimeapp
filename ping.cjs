@@ -1,8 +1,12 @@
 const { createClient } = require('@supabase/supabase-js');
 
+// Osiguravamo ispravan URL i ključeve
 const supabaseUrl = process.env.SUPABASE_URL || 'https://pomwrqrmvjxcnqeaaylk.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
 const resendApiKey = process.env.RESEND_API_KEY;
+
+console.log("KORISTIM URL:", supabaseUrl);
+console.log("DA LI POSTOJI KLJUČ:", supabaseKey ? "DA" : "NE");
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
