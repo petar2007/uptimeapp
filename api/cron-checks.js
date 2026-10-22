@@ -12,9 +12,10 @@ export default async function handler(req, res) {
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
     try {
+        // Povlačimo sajtove i direktno uzimamo plan iz povezane tabele 'profiles'
         const { data: sites, error: sitesErr } = await _supabase
             .from('sites')
-            .select('id, url, user_id');
+            .select('id, url, user_id, profiles(plan)');
 
         if (sitesErr || !sites || sites.length === 0) {
             return res.status(200).json({ message: 'No sites to check.' });
@@ -24,19 +25,32 @@ export default async function handler(req, res) {
         const results = [];
 
         for (const site of sites) {
+            // Izvlačimo plan korisnika bezbedno (Free, Pro ili Power)
+            const userPlan = Array.isArray(site.profiles) 
+                ? site.profiles[0]?.plan 
+                : site.profiles?.plan;
+
+            // Definisanje intervala na osnovu paketa:
+            // Free = 60 min, Pro = 30 min, Power = 5 min
+            let intervalMinutes = 60; // Podrazumevano za Free
+            if (userPlan === 'pro') {
+                intervalMinutes = 30;
+            } else if (userPlan === 'power') {
+                intervalMinutes = 5;
+            }
+
             const { data: lastCheckData } = await _supabase
                 .from('checks')
                 .select('checked_at')
                 .eq('site_id', site.id)
                 .order('checked_at', { ascending: false })
                 .limit(1);
-
-            let intervalMinutes = 5;
             
             if (lastCheckData && lastCheckData.length > 0) {
                 const lastCheckedTime = new Date(lastCheckData[0].checked_at);
                 const diffMinutes = (now - lastCheckedTime) / 1000 / 60;
 
+                // Ako još uvek nije prošlo dovoljno vremena za ovaj paket, preskačemo sajt
                 if (diffMinutes < intervalMinutes) {
                     continue; 
                 }
@@ -94,7 +108,7 @@ export default async function handler(req, res) {
                 }
             }
 
-            results.push({ url: site.url, status, responseTime });
+            results.push({ url: site.url, status, responseTime, plan: userPlan || 'free' });
         }
 
         return res.status(200).json({ success: true, checkedCount: results.length, details: results });
