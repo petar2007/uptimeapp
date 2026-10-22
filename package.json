@@ -5,6 +5,7 @@
   "type": "module",
   "dependencies": {
     "@supabase/supabase-js": "^2.39.8",
-    "dotenv": "^18.0.8"
+    "dotenv": "^18.0.8",
+    "nodemailer": "^10.2.1"
   }
 }

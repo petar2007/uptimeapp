@@ -1,57 +1,72 @@
 const { createClient } = require('@supabase/supabase-js');
+const nodemailer = require('nodemailer');
 
 // Osiguravamo ispravan URL i ključeve
 const supabaseUrl = process.env.SUPABASE_URL || 'https://pomwrqrmvjxcnqeaaylk.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
-const resendApiKey = process.env.RESEND_API_KEY;
+
+// Gmail SMTP konfiguracija
+const gmailUser = process.env.GMAIL_USER;
+const gmailPass = process.env.GMAIL_PASS;
 
 console.log("KORISTIM URL:", supabaseUrl);
-console.log("DA LI POSTOJI KLJUČ:", supabaseKey ? "DA" : "NE");
+console.log("DA LI POSTOJI SUPABASE KLJUČ:", supabaseKey ? "DA" : "NE");
+console.log("DA LI POSTOJI GMAIL PODEŠAVANJE:", (gmailUser && gmailPass) ? "DA" : "NE");
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Transporter za slanje mejlova preko Gmail-a
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: gmailUser,
+    pass: gmailPass,
+  },
+});
+
 async function sendAlertEmail(recipientEmail, siteUrl, statusCode) {
-  if (!resendApiKey || !recipientEmail) return;
+  if (!gmailUser || !gmailPass || !recipientEmail) {
+    console.error('⚠️ Fali GMAIL_USER, GMAIL_PASS ili recipientEmail za slanje mejla.');
+    return;
+  }
 
   try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${resendApiKey}`
-      },
-      body: JSON.stringify({
-        from: 'Uptime Monitor <onboarding@resend.dev>',
-        to: [recipientEmail],
-        subject: `🚨 ALERT: Your site is DOWN! (${siteUrl})`,
-        html: `<p>Your website <strong>${siteUrl}</strong> is unreachable. Status code: ${statusCode}</p>`
-      })
-    });
-    if (res.ok) {
-      console.log(`📧 Email alert successfully sent for ${siteUrl} to ${recipientEmail}`);
-    } else {
-      const errData = await res.json();
-      console.error('❌ Failed to send email:', errData);
-    }
+    const mailOptions = {
+      from: `"Uptime Monitor" <${gmailUser}>`,
+      to: recipientEmail,
+      subject: `🚨 ALERT: Tvoj sajt je PAO! (${siteUrl})`,
+      html: `
+        <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+          <h2 style="color: #e53e3e;">🚨 Obaveštenje o padu sajta</h2>
+          <p>Tvoj sajt <strong style="color: #2b6cb0;">${siteUrl}</strong> trenutno nije dostupan.</p>
+          <p>Status kod: <strong>${statusCode || 'N/A (Timeout / Connection Error)'}</strong></p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+          <small style="color: #718096;">Ovo je automatska poruka poslata sa tvog Uptime Monitora.</small>
+        </div>
+      `,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`📧 Mejlovsko upozorenje uspešno poslato za ${siteUrl} na adresu ${recipientEmail} (ID: ${info.messageId})`);
   } catch (err) {
-    console.error('❌ Error sending email alert:', err.message);
+    console.error('❌ Greška pri slanju mejla preko Gmail-a:', err.message);
   }
 }
 
 async function runUptimeMonitor() {
-  console.log('🚀 Starting global uptime monitoring engine...\n');
+  console.log('🚀 Pokrećem globalni uptime monitoring engine...\n');
 
   const { data: sites, error: fetchError } = await supabase
     .from('sites')
     .select('id, url, user_id');
 
   if (fetchError) {
-    console.error('❌ Failed to fetch sites:', fetchError.message);
+    console.error('❌ Neuspešno preuzimanje sajtova:', fetchError.message);
     return;
   }
 
   if (!sites || sites.length === 0) {
-    console.log('⚠️ No target sites found in the database.');
+    console.log('⚠️ Nema sajtova u bazi za proveru.');
     return;
   }
 
@@ -69,7 +84,7 @@ async function runUptimeMonitor() {
     }
 
     const responseTime = Date.now() - startTime;
-    console.log(`🌐 Target: ${site.url} | Status: ${statusCode} | Latency: ${responseTime}ms | Up: ${isUp}`);
+    console.log(`🌐 Sajt: ${site.url} | Status: ${statusCode} | Latencija: ${responseTime}ms | Aktivan: ${isUp}`);
 
     if (!isUp && site.user_id) {
       try {
@@ -79,7 +94,7 @@ async function runUptimeMonitor() {
           await sendAlertEmail(ownerEmail, site.url, statusCode);
         }
       } catch (e) {
-        console.error('Could not fetch user email:', e.message);
+        console.error('Neuspešno preuzimanje mejla korisnika:', e.message);
       }
     }
 
@@ -90,7 +105,7 @@ async function runUptimeMonitor() {
     }]);
   }
 
-  console.log('\n✨ Global uptime check completed successfully!');
+  console.log('\n✨ Provera svih sajtova je uspešno završena!');
 }
 
 runUptimeMonitor();
