@@ -22,6 +22,7 @@ jobs:
 
       - name: Run ping script
         env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         run: node ping.js
