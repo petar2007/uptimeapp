@@ -1,22 +1,14 @@
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
+import 'dotenv/config';
 
 const supabaseUrl = 'https://pomwrqrmvjxcnqeaaylk.supabase.co';
-const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
 const resendApiKey = process.env.RESEND_API_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Email notification function using Resend
 async function sendAlertEmail(recipientEmail, siteUrl, statusCode) {
-  if (!resendApiKey) {
-    console.log('⚠️ Resend API key missing, skipping email alert.');
-    return;
-  }
-
-  if (!recipientEmail) {
-    console.log(`⚠️ No email found for site ${siteUrl}, skipping alert.`);
-    return;
-  }
+  if (!resendApiKey || !recipientEmail) return;
 
   try {
     const res = await fetch('https://api.resend.com/emails', {
@@ -29,26 +21,11 @@ async function sendAlertEmail(recipientEmail, siteUrl, statusCode) {
         from: 'Uptime Monitor <onboarding@resend.dev>',
         to: [recipientEmail],
         subject: `🚨 ALERT: Your site is DOWN! (${siteUrl})`,
-        html: `
-          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #ea4335; border-radius: 8px;">
-            <h2 style="color: #ea4335; margin-top: 0;">Service Downtime Detected</h2>
-            <p>Hello,</p>
-            <p>Our automated monitoring system detected that your website <strong>${siteUrl}</strong> is currently unreachable.</p>
-            <hr style="border: 0; border-top: 1px solid #eee;" />
-            <p><strong>HTTP Status Code:</strong> ${statusCode || 'No Response / Timeout'}</p>
-            <p><strong>Timestamp:</strong> ${new Date().toUTCString()}</p>
-            <hr style="border: 0; border-top: 1px solid #eee;" />
-            <p style="font-size: 12px; color: #777;">You are receiving this automated message because this site is registered under your Uptime Monitor account.</p>
-          </div>
-        `
+        html: `<p>Your website <strong>${siteUrl}</strong> is unreachable. Status code: ${statusCode}</p>`
       })
     });
-
-    const data = await res.json();
     if (res.ok) {
       console.log(`📧 Email alert successfully sent for ${siteUrl} to ${recipientEmail}`);
-    } else {
-      console.error('❌ Failed to send email:', data);
     }
   } catch (err) {
     console.error('❌ Error sending email alert:', err.message);
@@ -58,18 +35,10 @@ async function sendAlertEmail(recipientEmail, siteUrl, statusCode) {
 async function runUptimeMonitor() {
   console.log('🚀 Starting global uptime monitoring engine...\n');
 
-  // Fetch sites and join with profiles table to get user email dynamically
+  // Povlačimo direktno sajtove (bez join-a sa profilima koji pravi problem)
   const { data: sites, error: fetchError } = await supabase
     .from('sites')
-    .select(`
-      id,
-      url,
-      user_id,
-      profiles (
-        email,
-        plan
-      )
-    `);
+    .select('id, url, user_id');
 
   if (fetchError) {
     console.error('❌ Failed to fetch sites:', fetchError.message);
@@ -97,24 +66,25 @@ async function runUptimeMonitor() {
     const responseTime = Date.now() - startTime;
     console.log(`🌐 Target: ${site.url} | Status: ${statusCode} | Latency: ${responseTime}ms | Up: ${isUp}`);
 
-    // If site is down, extract owner email from joined profiles table and send alert
-    if (!isUp) {
-      const ownerEmail = site.profiles ? site.profiles.email : null;
-      await sendAlertEmail(ownerEmail, site.url, statusCode);
+    // Ako je sajt pao, preko admin API-ja nalazimo email korisnika pomoću njegovog user_id
+    if (!isUp && site.user_id) {
+      try {
+        const { data: userData } = await supabase.auth.admin.getUserById(site.user_id);
+        const ownerEmail = userData?.user?.email;
+        if (ownerEmail) {
+          await sendAlertEmail(ownerEmail, site.url, statusCode);
+        }
+      } catch (e) {
+        console.error('Could not fetch user email:', e.message);
+      }
     }
 
-    const { error: insertError } = await supabase
-      .from('uptime_logs')
-      .insert([{ 
-        url: site.url, 
-        is_up: isUp, 
-        status_code: statusCode, 
-        response_time: responseTime 
-      }]);
-
-    if (insertError) {
-      console.error(`   ❌ Failed to insert log for ${site.url}:`, insertError.message);
-    }
+    // Upis u bazu
+    await supabase.from('checks').insert([{ 
+      site_id: site.id, 
+      status: isUp ? 'UP' : 'DOWN', 
+      response_time: responseTime 
+    }]);
   }
 
   console.log('\n✨ Global uptime check completed successfully!');

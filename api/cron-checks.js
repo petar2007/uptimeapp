@@ -12,17 +12,9 @@ export default async function handler(req, res) {
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
     try {
-        // 1. Povuci sve sajtove sa profilima (da imamo email direktno)
         const { data: sites, error: sitesErr } = await _supabase
             .from('sites')
-            .select(`
-                id,
-                url,
-                user_id,
-                profiles (
-                    email
-                )
-            `);
+            .select('id, url, user_id');
 
         if (sitesErr || !sites || sites.length === 0) {
             return res.status(200).json({ message: 'No sites to check.' });
@@ -32,7 +24,6 @@ export default async function handler(req, res) {
         const results = [];
 
         for (const site of sites) {
-            // Uzmi poslednju proveru za ovaj sajt
             const { data: lastCheckData } = await _supabase
                 .from('checks')
                 .select('checked_at')
@@ -51,7 +42,6 @@ export default async function handler(req, res) {
                 }
             }
 
-            // 2. Izvrši proveru sajta
             const startTime = Date.now();
             let status = 'DOWN';
             let responseTime = 0;
@@ -73,17 +63,16 @@ export default async function handler(req, res) {
                 status = 'DOWN';
             }
 
-            // 3. Upis u bazu
             await _supabase.from('checks').insert([{ 
                 site_id: site.id, 
                 status: status, 
                 response_time: responseTime 
             }]);
 
-            // 4. Slanje email obaveštenja ako je sajt pao
-            if (status === 'DOWN' && RESEND_API_KEY) {
+            if (status === 'DOWN' && RESEND_API_KEY && site.user_id) {
                 try {
-                    const ownerEmail = site.profiles ? site.profiles.email : null;
+                    const { data: userData } = await _supabase.auth.admin.getUserById(site.user_id);
+                    const ownerEmail = userData?.user?.email;
 
                     if (ownerEmail) {
                         await fetch('https://api.resend.com/emails', {
@@ -111,5 +100,5 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true, checkedCount: results.length, details: results });
     } catch (err) {
         return res.status(500).json({ error: err.message });
-     }
+    }
 }
