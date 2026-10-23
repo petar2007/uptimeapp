@@ -155,17 +155,16 @@
             <button onclick="hideAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl font-bold">&times;</button>
             <h3 class="text-xl font-bold mb-4">Account Access</h3>
 
-            <!-- ToS & Privacy Checkbox Section (Uvek prisutan u modalu) -->
+            <!-- ToS & Privacy Checkbox Section -->
             <div class="mb-4 bg-zinc-900/50 border border-zinc-800 p-3 rounded-xl">
                 <label class="flex items-start gap-2.5 text-xs text-slate-300 cursor-pointer">
                     <input type="checkbox" id="terms-toggle" onchange="toggleTerms()" class="mt-0.5 accent-amber-400 cursor-pointer">
                     <span>I agree to the <a href="/terms.html" target="_blank" class="text-amber-400 underline hover:text-amber-300">Terms of Service</a> & <a href="/privacy.html" target="_blank" class="text-amber-400 underline hover:text-amber-300">Privacy Policy</a>.</span>
                 </label>
-                <!-- Crveno upozorenje ako uslovi nisu prihvaćeni -->
                 <p id="terms-warning" class="text-red-400 text-[11px] mt-2 hidden font-medium">⚠️ You must accept the Terms & Privacy Policy before signing in or registering.</p>
             </div>
 
-            <!-- Google Login Button (Inicijalno Onemogućen i Bled) -->
+            <!-- Google Login Button -->
             <button type="button" id="google-auth-btn" onclick="handleGoogleAuth()" disabled class="w-full mb-4 bg-zinc-900 border border-zinc-800 text-slate-500 font-medium py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 transition opacity-40 cursor-not-allowed">
                 <svg class="w-4 h-4 opacity-50" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -195,7 +194,6 @@
                     <input type="password" id="auth-password" required class="w-full bg-black border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400 mt-1">
                 </div>
                 <div class="flex gap-2 pt-2">
-                    <!-- Inicijalno onemogućena i bleda dugmad za Email Auth -->
                     <button type="button" id="login-btn" onclick="handleAuth('login')" disabled class="flex-1 bg-zinc-900 border border-zinc-800 text-slate-500 font-bold py-2.5 rounded-lg text-sm transition opacity-40 cursor-not-allowed">Login</button>
                     <button type="button" id="signup-btn" onclick="handleAuth('signup')" disabled class="flex-1 bg-zinc-900 border border-zinc-800 text-slate-500 font-medium py-2.5 rounded-lg text-sm transition opacity-40 cursor-not-allowed">Sign Up</button>
                 </div>
@@ -203,9 +201,22 @@
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="border-t border-zinc-900 py-6 text-center text-xs text-slate-500">
-        &copy; 2026 BocydiumPulse. All rights reserved.
+    <!-- Sređen Footer sa ToS, Privacy i Contact Support linkovima -->
+    <footer class="border-t border-zinc-900 py-8 px-4 text-center text-xs text-slate-500 bg-black">
+        <div class="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                <p class="font-bold text-slate-400">&copy; 2026 BocydiumPulse. All rights reserved.</p>
+            </div>
+            <div class="flex flex-wrap justify-center gap-4 text-slate-400">
+                <a href="/terms.html" target="_blank" class="hover:text-amber-400 transition">Terms of Service</a>
+                <span>&bull;</span>
+                <a href="/privacy.html" target="_blank" class="hover:text-amber-400 transition">Privacy Policy</a>
+                <span>&bull;</span>
+                <a href="mailto:bocydiumpulse@gmail.com" class="text-amber-400 hover:text-amber-300 font-semibold transition flex items-center gap-1">
+                    ✉️ Contact Support
+                </a>
+            </div>
+        </div>
     </footer>
 
     <!-- Supabase Auth & Uptime Script -->
@@ -236,7 +247,6 @@
             errDiv.classList.add('hidden');
         }
 
-        // Kontrola za ToS Checkbox i otključavanje dugmadi
         function toggleTerms() {
             const isChecked = document.getElementById('terms-toggle').checked;
             const warningElem = document.getElementById('terms-warning');
@@ -247,41 +257,34 @@
             if (isChecked) {
                 warningElem.classList.add('hidden');
                 
-                // Otključavamo Google dugme
                 googleBtn.disabled = false;
                 googleBtn.classList.remove('opacity-40', 'cursor-not-allowed');
                 googleBtn.classList.add('hover:bg-zinc-800', 'text-white');
 
-                // Otključavamo Login dugme
                 loginBtn.disabled = false;
                 loginBtn.classList.remove('opacity-40', 'cursor-not-allowed', 'bg-zinc-900', 'text-slate-500');
                 loginBtn.classList.add('bg-amber-400', 'hover:bg-amber-300', 'text-slate-950');
 
-                // Otključavamo Signup dugme
                 signupBtn.disabled = false;
                 signupBtn.classList.remove('opacity-40', 'cursor-not-allowed', 'bg-zinc-900', 'text-slate-500');
                 signupBtn.classList.add('bg-zinc-900', 'hover:bg-zinc-800', 'text-slate-200');
             } else {
                 warningElem.classList.remove('hidden');
                 
-                // Zaključavamo Google dugme
                 googleBtn.disabled = true;
                 googleBtn.classList.add('opacity-40', 'cursor-not-allowed');
                 googleBtn.classList.remove('hover:bg-zinc-800', 'text-white');
 
-                // Zaključavamo Login dugme
                 loginBtn.disabled = true;
                 loginBtn.classList.add('opacity-40', 'cursor-not-allowed', 'bg-zinc-900', 'text-slate-500');
                 loginBtn.classList.remove('bg-amber-400', 'hover:bg-amber-300', 'text-slate-950');
 
-                // Zaključavamo Signup dugme
                 signupBtn.disabled = true;
                 signupBtn.classList.add('opacity-40', 'cursor-not-allowed', 'bg-zinc-900', 'text-slate-500');
                 signupBtn.classList.remove('bg-zinc-900', 'hover:bg-zinc-800', 'text-slate-200');
             }
         }
 
-        // Auth state listener
         _supabase.auth.onAuthStateChange(async (event, session) => {
             if (session) {
                 hideAuthModal();
@@ -313,7 +316,6 @@
             }
         });
 
-        // Google Authentication
         async function handleGoogleAuth() {
             const isChecked = document.getElementById('terms-toggle').checked;
             if (!isChecked) {
@@ -329,7 +331,6 @@
             if (error) showAuthError(error.message);
         }
 
-        // Email & Password Auth
         async function handleAuth(type) {
             clearAuthError();
             const isChecked = document.getElementById('terms-toggle').checked;
@@ -568,62 +569,44 @@
                     try {
                         const controller = new AbortController();
                         const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-                        await fetch(site.url, { 
-                            method: 'GET', 
-                            mode: 'no-cors', 
+                        
+                        const response = await fetch(site.url, { 
+                            method: 'HEAD', 
+                            mode: 'no-cors',
                             signal: controller.signal 
                         });
                         
                         clearTimeout(timeoutId);
-                        const endTime = performance.now();
-                        responseTime = Math.round(endTime - startTime);
                         status = 'UP';
                     } catch (err) {
-                        status = 'DOWN';
-                        responseTime = 10000;
+                        try {
+                            const controller = new AbortController();
+                            const timeoutId = setTimeout(() => controller.abort(), 10000);
+                            await fetch(site.url, { 
+                                method: 'GET', 
+                                mode: 'no-cors',
+                                signal: controller.signal 
+                            });
+                            clearTimeout(timeoutId);
+                            status = 'UP';
+                        } catch (innerErr) {
+                            status = 'DOWN';
+                        }
                     }
 
-                    await _supabase
-                        .from('checks')
-                        .insert([{ 
-                            site_id: site.id, 
-                            status: status, 
-                            response_time: responseTime 
-                        }]);
+                    responseTime = Math.round(performance.now() - startTime);
+
+                    await _supabase.from('checks').insert([{
+                        site_id: site.id,
+                        status: status,
+                        response_time: responseTime,
+                        checked_at: new Date().toISOString()
+                    }]);
                 }
+
                 await loadSites(userId);
             } catch (err) {
                 console.error("Error running uptime checks:", err);
-            }
-        }
-
-        function toggleBadgeCode() {
-            const box = document.getElementById('badge-code-box');
-            box.classList.toggle('hidden');
-        }
-
-        function copyBadgeCode() {
-            const copyText = document.getElementById('badge-code-input');
-            copyText.select();
-            copyText.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(copyText.value);
-            
-            const btn = document.getElementById('copy-badge-btn');
-            btn.innerText = "Copied!";
-            setTimeout(() => { btn.innerText = "Copy"; }, 2000);
-        }
-
-        function scrollToPricing(e) {
-            if (e) e.preventDefault();
-            const landingView = document.getElementById('landing-view');
-            const pricingSection = document.getElementById('pricing');
-
-            if (landingView.classList.contains('hidden')) {
-                landingView.classList.remove('hidden');
-                pricingSection.scrollIntoView({ behavior: 'smooth' });
-            } else {
-                pricingSection.scrollIntoView({ behavior: 'smooth' });
             }
         }
     </script>
